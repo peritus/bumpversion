@@ -4,3 +4,4 @@ bin/
 include/
 lib/
 .Python
+bumpversion.egg-info/
