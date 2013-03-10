@@ -25,4 +25,15 @@ files: file1""")
 
     assert "0.9.35" == tmpdir.join("file1").read()
 
+def test_default_config_file(tmpdir):
+    tmpdir.join("file2").write("0.10.2")
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+old_version: 0.10.2
+new_version: 0.10.3
+files: file2""")
+
+    tmpdir.chdir()
+    main([])
+
+    assert "0.10.3" == tmpdir.join("file2").read()
 
