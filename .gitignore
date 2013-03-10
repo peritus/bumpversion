@@ -1,0 +1,6 @@
+.tox
+_test_run/
+bin/
+include/
+lib/
+.Python
