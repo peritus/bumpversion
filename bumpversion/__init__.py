@@ -18,7 +18,6 @@ def main(args=None):
         config.read([known_args.config_file])
         defaults = dict(config.items("bumpversion"))
         defaults['files'] = defaults['files'].split(" ")
-        print defaults
  
     parser.set_defaults(**defaults)
 
@@ -29,8 +28,6 @@ def main(args=None):
 
     parser.add_argument('files', metavar='file', nargs='*',
             help='Files to change')
-
-    print defaults, remaining_argv
 
     args = parser.parse_args(remaining_argv)
 
