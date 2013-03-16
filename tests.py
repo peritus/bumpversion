@@ -14,7 +14,7 @@ def test_usage_string(capsys):
 
     out, err = capsys.readouterr()
     assert err == ""
-    assert out == """usage: py.test [-h] [--config-file FILE] [--old-version VERSION]
+    assert out == """usage: py.test [-h] [--config-file FILE] [--current-version VERSION]
                [--new-version VERSION]
                file [file ...]
 
@@ -27,7 +27,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
-  --old-version VERSION
+  --current-version VERSION
                         Version that needs to be updated (default: None)
   --new-version VERSION
                         New version that should be in the files (default:
@@ -37,14 +37,14 @@ optional arguments:
 def test_usage_string_with_config(tmpdir, capsys):
     tmpdir.chdir()
     tmpdir.join("mydefaults.cfg").write("""[bumpversion]
-old_version: 18
+current_version: 18
 new_version: 19
 files: file1 file2 file3""")
     with pytest.raises(SystemExit):
         main(['--config-file', 'mydefaults.cfg', '--help'])
 
     out, err = capsys.readouterr()
-    assert out == """usage: py.test [-h] [--config-file FILE] [--old-version VERSION]
+    assert out == """usage: py.test [-h] [--config-file FILE] [--current-version VERSION]
                [--new-version VERSION]
                [file [file ...]]
 
@@ -57,7 +57,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
-  --old-version VERSION
+  --current-version VERSION
                         Version that needs to be updated (default: 18)
   --new-version VERSION
                         New version that should be in the files (default: 19)
@@ -71,13 +71,13 @@ def test_missing_explicit_config_file(tmpdir):
 def test_simple_replacement(tmpdir):
     tmpdir.join("VERSION").write("1.2.0")
     tmpdir.chdir()
-    main(shlex_split("--old-version 1.2.0 --new-version 1.2.1 VERSION"))
+    main(shlex_split("--current-version 1.2.0 --new-version 1.2.1 VERSION"))
     assert "1.2.1" == tmpdir.join("VERSION").read()
 
 def test_config_file(tmpdir):
     tmpdir.join("file1").write("0.9.34")
     tmpdir.join("mybumpconfig.cfg").write("""[bumpversion]
-old_version: 0.9.34
+current_version: 0.9.34
 new_version: 0.9.35
 files: file1""")
 
@@ -89,7 +89,7 @@ files: file1""")
 def test_default_config_file(tmpdir):
     tmpdir.join("file2").write("0.10.2")
     tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
-old_version: 0.10.2
+current_version: 0.10.2
 new_version: 0.10.3
 files: file2""")
 

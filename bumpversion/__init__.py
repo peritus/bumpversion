@@ -30,7 +30,7 @@ def main(args=None):
  
     parser.set_defaults(**defaults)
 
-    parser.add_argument('--old-version', metavar='VERSION',
+    parser.add_argument('--current-version', metavar='VERSION',
         help='Version that needs to be updated')
     parser.add_argument('--new-version', metavar='VERSION',
         help='New version that should be in the files')
@@ -46,9 +46,9 @@ def main(args=None):
 
     args = parser.parse_args(remaining_argv)
 
-    do_it(args.old_version, args.new_version, args.files)
+    do_it(args.current_version, args.new_version, args.files)
 
-def do_it(old_version, new_version, files):
+def do_it(current_version, new_version, files):
 
     if len(files) is 0:
         warnings.warn("No files specified")
@@ -57,10 +57,10 @@ def do_it(old_version, new_version, files):
         with open(path, 'r') as f:
             before = f.read()
 
-        assert old_version in before, 'Did not find string {} in file {}'.format(
-            old_version, path)
+        assert current_version in before, 'Did not find string {} in file {}'.format(
+            current_version, path)
 
-        after = before.replace(old_version, new_version)
+        after = before.replace(current_version, new_version)
 
         with open(path, 'w') as f:
             f.write(after)
