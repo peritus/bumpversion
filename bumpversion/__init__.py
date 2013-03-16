@@ -12,12 +12,6 @@ def main(args=None):
         help='Config file to read most of the variables from', required=False)
 
     known_args, remaining_argv = configfileparser.parse_known_args(args)
-
-    parser = argparse.ArgumentParser(
-      description='Bumps version strings',
-      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-      parents=[configfileparser])
-
     defaults = {}
 
     config = None
@@ -25,10 +19,15 @@ def main(args=None):
         config = ConfigParser.SafeConfigParser()
         config.read([known_args.config_file])
         defaults = dict(config.items("bumpversion"))
-    elif known_args.config_file != parser.get_default('config_file'):
+    elif known_args.config_file != configfileparser.get_default('config_file'):
         raise argparse.ArgumentTypeError("Could not read config file at {}".format(
             known_args.config_file))
- 
+
+    parser = argparse.ArgumentParser(
+      description='Bumps version strings',
+      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+      parents=[configfileparser])
+
     parser.set_defaults(**defaults)
 
     parser.add_argument('--dry-run', '-n', action='store_true',
