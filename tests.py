@@ -14,7 +14,9 @@ def test_usage_string(capsys):
 
     out, err = capsys.readouterr()
     assert err == ""
-    assert out == """usage: py.test [-h] [--config-file FILE] [--dry-run] --current-version VERSION
+    assert out == """
+usage: py.test [-h] [--config-file FILE] [--bump PART] [--parse REGEX]
+               [--serialize FORMAT] [--current-version VERSION] [--dry-run]
                --new-version VERSION
                file [file ...]
 
@@ -27,13 +29,18 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
-  --dry-run, -n         Don't write any files, just pretend. (default: False)
+  --bump PART           Part of the version to be bumped. (default: patch)
+  --parse REGEX         Regex parsing the version string (default:
+                        (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
+  --serialize FORMAT    How to format what is parsed back to a version
+                        (default: {major}.{minor}.{patch})
   --current-version VERSION
                         Version that needs to be updated (default: None)
+  --dry-run, -n         Don't write any files, just pretend. (default: False)
   --new-version VERSION
                         New version that should be in the files (default:
                         None)
-"""
+""".lstrip()
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
     tmpdir.chdir()
@@ -120,4 +127,17 @@ files: file4"""
 
     assert config == tmpdir.join(".bumpversion.cfg").read()
     assert version == tmpdir.join("file4").read()
+
+def test_parse_current_version(tmpdir):
+
+    tmpdir.join("file5").write("1.0.0")
+    tmpdir.chdir()
+    main([
+      '--current-version', '1.0.0',
+      '--bump', 'patch',
+      '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)',
+      'file5'
+    ])
+
+    assert '1.0.1' == tmpdir.join("file5").read()
 

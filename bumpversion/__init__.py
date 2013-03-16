@@ -3,15 +3,44 @@ import ConfigParser
 import argparse
 import os.path
 import warnings
+import re
+import sre_constants
+
+def attempt_version_bump(args):
+    try:
+        regex = re.compile(args.parse)
+    except sre_constants.error:
+        warnings.warn("--patch '{}' is not a valid regex".format(args.parse))
+        return
+
+    if args.current_version:
+        match = regex.search(args.current_version)
+    else:
+        return
+
+    if not match:
+        warnings.warn("'{}' does not parse current version".format(args.parse))
+        return
+
+    parsed = match.groupdict()
+
+    parsed[args.bump] = int(parsed[args.bump]) + 1
+
+    try:
+        return args.serialize.format(**parsed)
+    except KeyError as e:
+        warnings.warn("Did not find {} in {} when serializing version number".format(e.message, repr(parsed)))
+        return
 
 def main(args=None):
 
-    configfileparser = argparse.ArgumentParser(add_help=False)
+    parser1 = argparse.ArgumentParser(add_help=False)
 
-    configfileparser.add_argument('--config-file', default='.bumpversion.cfg', metavar='FILE',
+    parser1.add_argument('--config-file', default='.bumpversion.cfg', metavar='FILE',
         help='Config file to read most of the variables from', required=False)
 
-    known_args, remaining_argv = configfileparser.parse_known_args(args)
+    known_args, remaining_argv = parser1.parse_known_args(args)
+
     defaults = {}
 
     config = None
@@ -19,23 +48,49 @@ def main(args=None):
         config = ConfigParser.SafeConfigParser()
         config.read([known_args.config_file])
         defaults = dict(config.items("bumpversion"))
-    elif known_args.config_file != configfileparser.get_default('config_file'):
+    elif known_args.config_file != parser1.get_default('config_file'):
         raise argparse.ArgumentTypeError("Could not read config file at {}".format(
             known_args.config_file))
 
-    parser = argparse.ArgumentParser(
+    parser2 = argparse.ArgumentParser(add_help=False, parents=[parser1])
+    parser2.set_defaults(**defaults)
+
+    parser2.add_argument('--current-version', metavar='VERSION',
+        help='Version that needs to be updated', required=False)
+    parser2.add_argument('--bump', metavar='PART',
+        help='Part of the version to be bumped.',
+        default='patch')
+    parser2.add_argument('--parse', metavar='REGEX',
+        help='Regex parsing the version string',
+        default='(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)')
+    parser2.add_argument('--serialize', metavar='FORMAT',
+        help='How to format what is parsed back to a version',
+        default='{major}.{minor}.{patch}')
+
+
+    known_args, remaining_argv = parser2.parse_known_args(remaining_argv)
+
+    defaults.update(vars(known_args))
+
+    _attempted_new_version = attempt_version_bump(known_args)
+    if not ('new_version' in defaults) and _attempted_new_version != None:
+        defaults['new_version'] = _attempted_new_version
+
+    parser3 = argparse.ArgumentParser(
       description='Bumps version strings',
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-      parents=[configfileparser])
+      conflict_handler='resolve',
+      parents=[parser2],
+    )
 
-    parser.set_defaults(**defaults)
+    parser3.set_defaults(**defaults)
 
-    parser.add_argument('--dry-run', '-n', action='store_true',
-        default=False, help="Don't write any files, just pretend.")
-    parser.add_argument('--current-version', metavar='VERSION',
+    parser3.add_argument('--current-version', metavar='VERSION',
         help='Version that needs to be updated',
         required=not 'current_version' in defaults)
-    parser.add_argument('--new-version', metavar='VERSION',
+    parser3.add_argument('--dry-run', '-n', action='store_true',
+        default=False, help="Don't write any files, just pretend.")
+    parser3.add_argument('--new-version', metavar='VERSION',
         help='New version that should be in the files',
         required=not 'new_version' in defaults)
 
@@ -44,11 +99,11 @@ def main(args=None):
         assert defaults['files'] != None
         files = defaults['files'].split(' ')
 
-    parser.add_argument('files', metavar='file',
+    parser3.add_argument('files', metavar='file',
             nargs='+' if len(files) == 0 else '*',
             help='Files to change', default=files)
 
-    args = parser.parse_args(remaining_argv)
+    args = parser3.parse_args(remaining_argv)
 
     if len(args.files) is 0:
         warnings.warn("No files specified")
