@@ -31,9 +31,11 @@ def main(args=None):
     parser.set_defaults(**defaults)
 
     parser.add_argument('--current-version', metavar='VERSION',
-        help='Version that needs to be updated')
+        help='Version that needs to be updated',
+        required=not 'current_version' in defaults)
     parser.add_argument('--new-version', metavar='VERSION',
-        help='New version that should be in the files')
+        help='New version that should be in the files',
+        required=not 'new_version' in defaults)
 
     files = []
     if 'files' in defaults:

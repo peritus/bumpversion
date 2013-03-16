@@ -14,8 +14,8 @@ def test_usage_string(capsys):
 
     out, err = capsys.readouterr()
     assert err == ""
-    assert out == """usage: py.test [-h] [--config-file FILE] [--current-version VERSION]
-               [--new-version VERSION]
+    assert out == """usage: py.test [-h] [--config-file FILE] --current-version VERSION
+               --new-version VERSION
                file [file ...]
 
 Bumps version strings
