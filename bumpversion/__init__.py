@@ -48,21 +48,17 @@ def main(args=None):
 
     args = parser.parse_args(remaining_argv)
 
-    do_it(args.current_version, args.new_version, args.files)
-
-def do_it(current_version, new_version, files):
-
-    if len(files) is 0:
+    if len(args.files) is 0:
         warnings.warn("No files specified")
 
-    for path in files:
+    for path in args.files:
         with open(path, 'r') as f:
             before = f.read()
 
-        assert current_version in before, 'Did not find string {} in file {}'.format(
-            current_version, path)
+        assert args.current_version in before, 'Did not find string {} in file {}'.format(
+            args.current_version, path)
 
-        after = before.replace(current_version, new_version)
+        after = before.replace(args.current_version, args.new_version)
 
         with open(path, 'w') as f:
             f.write(after)
