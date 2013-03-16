@@ -20,6 +20,7 @@ def main(args=None):
 
     defaults = {}
 
+    config = None
     if os.path.exists(known_args.config_file):
         config = ConfigParser.SafeConfigParser()
         config.read([known_args.config_file])
@@ -62,4 +63,9 @@ def main(args=None):
 
         with open(path, 'w') as f:
             f.write(after)
+
+    if config:
+        config.remove_option('bumpversion', 'new_version')
+        config.set('bumpversion', 'current_version', args.new_version)
+        config.write(open(known_args.config_file, 'wb'))
 

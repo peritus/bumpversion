@@ -98,3 +98,19 @@ files: file2""")
 
     assert "0.10.3" == tmpdir.join("file2").read()
 
+def test_config_file_is_updated(tmpdir):
+    tmpdir.join("file3").write("13")
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+current_version: 13
+new_version: 14
+files: file3""")
+
+    tmpdir.chdir()
+    main([])
+
+    assert """[bumpversion]
+current_version = 14
+files = file3
+
+""" == tmpdir.join(".bumpversion.cfg").read()
+
