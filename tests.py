@@ -8,7 +8,9 @@ from shlex import split as shlex_split
 
 from bumpversion import main
 
-def test_usage_string(capsys):
+def test_usage_string(tmpdir, capsys):
+    tmpdir.chdir()
+
     with pytest.raises(SystemExit):
         main(['--help'])
 
