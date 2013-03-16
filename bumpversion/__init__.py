@@ -29,7 +29,8 @@ def attempt_version_bump(args):
     try:
         return args.serialize.format(**parsed)
     except KeyError as e:
-        warnings.warn("Did not find {} in {} when serializing version number".format(e.message, repr(parsed)))
+        warnings.warn("Did not find key {} in {} when serializing version number".format(
+            repr(e.message), repr(parsed)))
         return
 
 def main(args=None):
