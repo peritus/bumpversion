@@ -14,7 +14,7 @@ def test_usage_string(capsys):
 
     out, err = capsys.readouterr()
     assert err == ""
-    assert out == """usage: py.test [-h] [--config-file FILE] --current-version VERSION
+    assert out == """usage: py.test [-h] [--config-file FILE] [--dry-run] --current-version VERSION
                --new-version VERSION
                file [file ...]
 
@@ -27,6 +27,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
+  --dry-run, -n         Don't write any files, just pretend. (default: False)
   --current-version VERSION
                         Version that needs to be updated (default: None)
   --new-version VERSION
@@ -44,8 +45,8 @@ files: file1 file2 file3""")
         main(['--config-file', 'mydefaults.cfg', '--help'])
 
     out, err = capsys.readouterr()
-    assert out == """usage: py.test [-h] [--config-file FILE] [--current-version VERSION]
-               [--new-version VERSION]
+    assert out == """usage: py.test [-h] [--config-file FILE] [--dry-run]
+               [--current-version VERSION] [--new-version VERSION]
                [file [file ...]]
 
 Bumps version strings
@@ -57,6 +58,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
+  --dry-run, -n         Don't write any files, just pretend. (default: False)
   --current-version VERSION
                         Version that needs to be updated (default: 18)
   --new-version VERSION
@@ -113,4 +115,22 @@ current_version = 14
 files = file3
 
 """ == tmpdir.join(".bumpversion.cfg").read()
+
+def test_dry_run(tmpdir):
+
+    config = """[bumpversion]
+current_version: 12
+new_version: 12.2
+files: file4"""
+
+    version = "12"
+
+    tmpdir.join("file4").write(version)
+    tmpdir.join(".bumpversion.cfg").write(config)
+
+    tmpdir.chdir()
+    main(['--dry-run'])
+
+    assert config == tmpdir.join(".bumpversion.cfg").read()
+    assert version == tmpdir.join("file4").read()
 

@@ -31,6 +31,8 @@ def main(args=None):
  
     parser.set_defaults(**defaults)
 
+    parser.add_argument('--dry-run', '-n', action='store_true',
+        default=False, help="Don't write any files, just pretend.")
     parser.add_argument('--current-version', metavar='VERSION',
         help='Version that needs to be updated',
         required=not 'current_version' in defaults)
@@ -61,11 +63,14 @@ def main(args=None):
 
         after = before.replace(args.current_version, args.new_version)
 
-        with open(path, 'w') as f:
-            f.write(after)
+        if not args.dry_run:
+            with open(path, 'w') as f:
+                f.write(after)
 
     if config:
         config.remove_option('bumpversion', 'new_version')
         config.set('bumpversion', 'current_version', args.new_version)
-        config.write(open(known_args.config_file, 'wb'))
+
+        if not args.dry_run:
+            config.write(open(known_args.config_file, 'wb'))
 
