@@ -128,16 +128,25 @@ files: file4"""
     assert config == tmpdir.join(".bumpversion.cfg").read()
     assert version == tmpdir.join("file4").read()
 
-def test_parse_current_version(tmpdir):
+def test_bump_version(tmpdir):
 
     tmpdir.join("file5").write("1.0.0")
     tmpdir.chdir()
-    main([
-      '--current-version', '1.0.0',
-      '--bump', 'patch',
-      '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)',
-      'file5'
-    ])
+    main(['--current-version', '1.0.0', 'file5'])
 
     assert '1.0.1' == tmpdir.join("file5").read()
+
+def test_bump_version_custom_parse(tmpdir):
+
+    tmpdir.join("file6").write("XXX1;0;0")
+    tmpdir.chdir()
+    main([
+      '--current-version', 'XXX1;0;0',
+      '--bump', 'garlg',
+      '--parse', 'XXX(?P<spam>\d+);(?P<garlg>\d+);(?P<slurp>\d+)',
+      '--serialize', 'XXX{spam};{garlg};{slurp}',
+      'file6'
+    ])
+
+    assert 'XXX1;1;0' == tmpdir.join("file6").read()
 
