@@ -1,11 +1,72 @@
 import pytest
 
+import argparse
 import subprocess
 from os import curdir, makedirs, chdir
 from os.path import join, curdir, dirname
 from shlex import split as shlex_split
 
 from bumpversion import main
+
+def test_usage_string(capsys):
+    with pytest.raises(SystemExit):
+        main(['--help'])
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out == """usage: py.test [-h] [--config-file FILE] [--old-version VERSION]
+               [--new-version VERSION]
+               [file [file ...]]
+
+Bumps version strings
+
+positional arguments:
+  file                  Files to change (default: None)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config-file FILE    Config file to read most of the variables from
+                        (default: .bumpversion.cfg)
+  --old-version VERSION
+                        Version that needs to be updated (default: None)
+  --new-version VERSION
+                        New version that should be in the files (default:
+                        None)
+"""
+
+def test_usage_string_with_config(tmpdir, capsys):
+    tmpdir.chdir()
+    tmpdir.join("mydefaults.cfg").write("""[bumpversion]
+old_version: 18
+new_version: 19
+files: file1 file2 file3""")
+    with pytest.raises(SystemExit):
+        main(['--config-file', 'mydefaults.cfg', '--help'])
+
+    out, err = capsys.readouterr()
+    assert out == """usage: py.test [-h] [--config-file FILE] [--old-version VERSION]
+               [--new-version VERSION]
+               [file [file ...]]
+
+Bumps version strings
+
+positional arguments:
+  file                  Files to change (default: ['file1', 'file2', 'file3'])
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config-file FILE    Config file to read most of the variables from
+                        (default: .bumpversion.cfg)
+  --old-version VERSION
+                        Version that needs to be updated (default: 18)
+  --new-version VERSION
+                        New version that should be in the files (default: 19)
+"""
+
+def test_missing_explicit_config_file(tmpdir):
+    tmpdir.chdir()
+    with pytest.raises(argparse.ArgumentTypeError):
+        main(['--config-file', 'missing.cfg'])
 
 def test_simple_replacement(tmpdir):
     tmpdir.join("VERSION").write("1.2.0")
