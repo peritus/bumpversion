@@ -16,12 +16,12 @@ def test_usage_string(capsys):
     assert err == ""
     assert out == """usage: py.test [-h] [--config-file FILE] [--old-version VERSION]
                [--new-version VERSION]
-               [file [file ...]]
+               file [file ...]
 
 Bumps version strings
 
 positional arguments:
-  file                  Files to change (default: None)
+  file                  Files to change
 
 optional arguments:
   -h, --help            show this help message and exit

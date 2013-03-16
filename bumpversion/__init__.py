@@ -24,7 +24,6 @@ def main(args=None):
         config = ConfigParser.SafeConfigParser()
         config.read([known_args.config_file])
         defaults = dict(config.items("bumpversion"))
-        defaults['files'] = defaults['files'].split(" ")
     elif known_args.config_file != parser.get_default('config_file'):
         raise argparse.ArgumentTypeError("Could not read config file at {}".format(
             known_args.config_file))
@@ -36,8 +35,14 @@ def main(args=None):
     parser.add_argument('--new-version', metavar='VERSION',
         help='New version that should be in the files')
 
-    parser.add_argument('files', metavar='file', nargs='*',
-            help='Files to change')
+    files = []
+    if 'files' in defaults:
+        assert defaults['files'] != None
+        files = defaults['files'].split(' ')
+
+    parser.add_argument('files', metavar='file',
+            nargs='+' if len(files) == 0 else '*',
+            help='Files to change', default=files)
 
     args = parser.parse_args(remaining_argv)
 
