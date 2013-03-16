@@ -35,7 +35,7 @@ optional arguments:
                         None)
 """
 
-def test_usage_string_with_config(tmpdir, capsys):
+def test_defaults_in_usage_with_config(tmpdir, capsys):
     tmpdir.chdir()
     tmpdir.join("mydefaults.cfg").write("""[bumpversion]
 current_version: 18
@@ -45,25 +45,12 @@ files: file1 file2 file3""")
         main(['--config-file', 'mydefaults.cfg', '--help'])
 
     out, err = capsys.readouterr()
-    assert out == """usage: py.test [-h] [--config-file FILE] [--dry-run]
-               [--current-version VERSION] [--new-version VERSION]
-               [file [file ...]]
 
-Bumps version strings
-
-positional arguments:
-  file                  Files to change (default: ['file1', 'file2', 'file3'])
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --config-file FILE    Config file to read most of the variables from
-                        (default: .bumpversion.cfg)
-  --dry-run, -n         Don't write any files, just pretend. (default: False)
-  --current-version VERSION
-                        Version that needs to be updated (default: 18)
-  --new-version VERSION
-                        New version that should be in the files (default: 19)
-"""
+    assert "Version that needs to be updated (default: 18)" in out
+    assert "New version that should be in the files (default: 19)" in out
+    assert "[--current-version VERSION]" in out
+    assert "[--new-version VERSION]" in out
+    assert "[file [file ...]]" in out
 
 def test_missing_explicit_config_file(tmpdir):
     tmpdir.chdir()
