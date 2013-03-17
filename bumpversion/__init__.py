@@ -1,4 +1,3 @@
-
 import ConfigParser
 import argparse
 import os.path
@@ -6,6 +5,7 @@ import warnings
 import re
 import sre_constants
 import subprocess
+from string import Formatter
 
 def attempt_version_bump(args):
     try:
@@ -25,7 +25,17 @@ def attempt_version_bump(args):
 
     parsed = match.groupdict()
 
-    parsed[args.bump] = int(parsed[args.bump]) + 1
+    order = (label for _, label, _, _ in Formatter().parse(args.serialize))
+
+    bumped = False
+    for label in order:
+        if label == args.bump:
+            parsed[args.bump] = int(parsed[args.bump]) + 1
+            bumped = True
+        elif bumped:
+            parsed[label] = 0
+
+    assert bumped
 
     try:
         return args.serialize.format(**parsed)
@@ -139,4 +149,3 @@ def main(args=None):
 
         if not args.dry_run:
             config.write(open(known_args.config_file, 'wb'))
-

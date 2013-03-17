@@ -162,3 +162,10 @@ def test_git_dirty_workdir(tmpdir):
     with pytest.raises(AssertionError):
         main(['--current-version', '1', '--new-version', '2', 'file7'])
 
+def test_bump_major(tmpdir):
+    tmpdir.join("fileMAJORBUMP").write("4.2.8")
+    tmpdir.chdir()
+    main(['--current-version', '4.2.8', '--bump', 'major', 'fileMAJORBUMP'])
+
+    assert '5.0.0' == tmpdir.join("fileMAJORBUMP").read()
+
