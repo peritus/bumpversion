@@ -2,12 +2,15 @@
 
 import ConfigParser
 import argparse
-import os.path
+import os
 import warnings
 import re
 import sre_constants
 import subprocess
 from string import Formatter
+
+def prefixed_environ():
+    return dict((("${}".format(key), value) for key, value in os.environ.iteritems()))
 
 def attempt_version_bump(args):
     try:
@@ -38,6 +41,7 @@ def attempt_version_bump(args):
             parsed[label] = 0
 
     assert bumped
+    parsed.update(prefixed_environ())
 
     try:
         return args.serialize.format(**parsed)
@@ -168,11 +172,12 @@ def main(args=None):
             for path in commit_files:
                 subprocess.check_call(["git", "add", path])
 
-            subprocess.check_call(["git", "commit", "-m", args.message.format(
-                current_version=args.current_version,
-                new_version=args.new_version,
-                )])
+            formatargs = {
+              "current_version": args.current_version,
+              "new_version": args.new_version,
+            }
+            formatargs.update(prefixed_environ())
 
-            subprocess.check_call(["git", "tag", "v{new_version}".format(
-                new_version=args.new_version)])
+            subprocess.check_call(["git", "commit", "-m", args.message.format(**formatargs)])
+            subprocess.check_call(["git", "tag", "v{new_version}".format(**formatargs)])
 

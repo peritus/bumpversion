@@ -4,7 +4,7 @@ import pytest
 
 import argparse
 import subprocess
-from os import curdir, makedirs, chdir
+from os import curdir, makedirs, chdir, environ
 from os.path import join, curdir, dirname
 from shlex import split as shlex_split
 
@@ -196,3 +196,20 @@ def test_git_commit(tmpdir):
     tag_out = subprocess.check_output(["git", "tag"])
 
     assert 'v47.1.2' in tag_out
+
+def test_bump_version_ENV(tmpdir):
+
+    tmpdir.join("on_jenkins").write("2.3.4")
+    tmpdir.chdir()
+    environ['BUILD_NUMBER'] = "567"
+    main([
+      '--current-version', '2.3.4',
+      '--bump', 'patch',
+      '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+).*',
+      '--serialize', '{major}.{minor}.{patch}.pre{$BUILD_NUMBER}',
+      'on_jenkins',
+    ])
+    del environ['BUILD_NUMBER']
+
+    assert '2.3.5.pre567' == tmpdir.join("on_jenkins").read()
+
