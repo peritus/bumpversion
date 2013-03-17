@@ -152,3 +152,13 @@ def test_bump_version_custom_parse(tmpdir):
 
     assert 'XXX1;1;0' == tmpdir.join("file6").read()
 
+def test_git_dirty_workdir(tmpdir):
+    tmpdir.chdir()
+    subprocess.check_output(["git", "init"])
+    tmpdir.join("dirty").write("i'm dirty")
+
+    subprocess.check_output(["git", "add", "dirty"])
+
+    with pytest.raises(AssertionError):
+        main(['--current-version', '1', '--new-version', '2', 'file7'])
+

@@ -5,6 +5,7 @@ import os.path
 import warnings
 import re
 import sre_constants
+import subprocess
 
 def attempt_version_bump(args):
     try:
@@ -108,6 +109,16 @@ def main(args=None):
 
     if len(args.files) is 0:
         warnings.warn("No files specified")
+
+    if os.path.isdir(".git"):
+        lines = [
+            line.strip() for line in
+            subprocess.check_output(["git", "status", "--porcelain"]).splitlines()
+            if not line.strip().startswith("??")
+        ]
+
+        if lines:
+            assert False, "Git working directory not clean:\n{}".format("\n".join(lines))
 
     for path in args.files:
         with open(path, 'r') as f:
