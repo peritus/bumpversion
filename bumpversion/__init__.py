@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import ConfigParser
 import argparse
 import os.path
@@ -111,7 +113,7 @@ def main(args=None):
         help='Create a tag in version control')
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
         help='Commit message',
-        default='Bump version: {current_version} -> {new_version}')
+        default='Bump version: {current_version} → {new_version}')
 
     files = []
     if 'files' in defaults:
@@ -166,7 +168,7 @@ def main(args=None):
             for path in commit_files:
                 subprocess.check_call(["git", "add", path])
 
-            subprocess.check_call(["git", "commit", "--message", args.message.format(
+            subprocess.check_call(["git", "commit", "-m", args.message.format(
                 current_version=args.current_version,
                 new_version=args.new_version,
                 )])

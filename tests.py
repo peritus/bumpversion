@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pytest
 
 import argparse
@@ -16,7 +18,7 @@ def test_usage_string(tmpdir, capsys):
 
     out, err = capsys.readouterr()
     assert err == ""
-    assert out == """
+    assert out == u"""
 usage: py.test [-h] [--config-file FILE] [--bump PART] [--parse REGEX]
                [--serialize FORMAT] [--current-version VERSION] [--dry-run]
                --new-version VERSION [--commit] [--tag] [--message COMMIT_MSG]
@@ -46,7 +48,7 @@ optional arguments:
   --tag                 Create a tag in version control (default: False)
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
-                        {current_version} -> {new_version})
+                        {current_version} → {new_version})
 """.lstrip()
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
@@ -181,14 +183,15 @@ def test_git_commit(tmpdir):
     subprocess.check_call(["git", "add", "VERSION"])
     subprocess.check_call(["git", "commit", "-m", "initial commit"])
 
-    main(['--current-version', '47.1.1', '--commit', 'VERSION'])
+    main(['--current-version', '47.1.1', '--commit', '--tag', 'VERSION'])
 
     assert '47.1.2' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output(["git", "log", "-p"])
+    log = subprocess.check_output(["git", "log", "--decorate=full", "-p"])
 
     assert '-47.1.1' in log
     assert '+47.1.2' in log
+    assert u'Bump version: 47.1.1 → 47.1.2' in log.decode("utf-8")
 
     tag_out = subprocess.check_output(["git", "tag"])
 
