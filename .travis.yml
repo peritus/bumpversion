@@ -4,8 +4,9 @@ python:
   - 2.7
 
 install:
-    pip install pytest
+  - git config --global user.email "bumpversion-test@travis.ci"
+  - git config --global user.name "Testing on Travis CI"
+  - pip install pytest
 
-script:
-    py.test -vv tests.py
+script: py.test tests.py
 

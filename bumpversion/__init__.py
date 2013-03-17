@@ -105,6 +105,13 @@ def main(args=None):
     parser3.add_argument('--new-version', metavar='VERSION',
         help='New version that should be in the files',
         required=not 'new_version' in defaults)
+    parser3.add_argument('--commit', action='store_true',
+        help='Create a commit in version control')
+    parser3.add_argument('--tag', action='store_true',
+        help='Create a tag in version control')
+    parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
+        help='Commit message',
+        default='Bump version: {current_version} -> {new_version}')
 
     files = []
     if 'files' in defaults:
@@ -143,9 +150,27 @@ def main(args=None):
             with open(path, 'w') as f:
                 f.write(after)
 
+
+    commit_files = args.files
+
     if config:
         config.remove_option('bumpversion', 'new_version')
         config.set('bumpversion', 'current_version', args.new_version)
 
         if not args.dry_run:
             config.write(open(known_args.config_file, 'wb'))
+            commit_files.append(known_args.config_file)
+
+    if args.commit:
+        if not args.dry_run:
+            for path in commit_files:
+                subprocess.check_call(["git", "add", path])
+
+            subprocess.check_call(["git", "commit", "--message", args.message.format(
+                current_version=args.current_version,
+                new_version=args.new_version,
+                )])
+
+            subprocess.check_call(["git", "tag", "v{new_version}".format(
+                new_version=args.new_version)])
+

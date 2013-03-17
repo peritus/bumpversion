@@ -19,7 +19,7 @@ def test_usage_string(tmpdir, capsys):
     assert out == """
 usage: py.test [-h] [--config-file FILE] [--bump PART] [--parse REGEX]
                [--serialize FORMAT] [--current-version VERSION] [--dry-run]
-               --new-version VERSION
+               --new-version VERSION [--commit] [--tag] [--message COMMIT_MSG]
                file [file ...]
 
 Bumps version strings
@@ -42,6 +42,11 @@ optional arguments:
   --new-version VERSION
                         New version that should be in the files (default:
                         None)
+  --commit              Create a commit in version control (default: False)
+  --tag                 Create a tag in version control (default: False)
+  --message COMMIT_MSG, -m COMMIT_MSG
+                        Commit message (default: Bump version:
+                        {current_version} -> {new_version})
 """.lstrip()
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
@@ -154,10 +159,10 @@ def test_bump_version_custom_parse(tmpdir):
 
 def test_git_dirty_workdir(tmpdir):
     tmpdir.chdir()
-    subprocess.check_output(["git", "init"])
+    subprocess.check_call(["git", "init"])
     tmpdir.join("dirty").write("i'm dirty")
 
-    subprocess.check_output(["git", "add", "dirty"])
+    subprocess.check_call(["git", "add", "dirty"])
 
     with pytest.raises(AssertionError):
         main(['--current-version', '1', '--new-version', '2', 'file7'])
@@ -169,3 +174,22 @@ def test_bump_major(tmpdir):
 
     assert '5.0.0' == tmpdir.join("fileMAJORBUMP").read()
 
+def test_git_commit(tmpdir):
+    tmpdir.chdir()
+    subprocess.check_call(["git", "init"])
+    tmpdir.join("VERSION").write("47.1.1")
+    subprocess.check_call(["git", "add", "VERSION"])
+    subprocess.check_call(["git", "commit", "-m", "initial commit"])
+
+    main(['--current-version', '47.1.1', '--commit', 'VERSION'])
+
+    assert '47.1.2' == tmpdir.join("VERSION").read()
+
+    log = subprocess.check_output(["git", "log", "-p"])
+
+    assert '-47.1.1' in log
+    assert '+47.1.2' in log
+
+    tag_out = subprocess.check_output(["git", "tag"])
+
+    assert 'v47.1.2' in tag_out
