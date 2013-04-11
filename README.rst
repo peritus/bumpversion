@@ -114,7 +114,7 @@ Options
   Whether to create a git commit
 
 ``--message`` / ``message =``
-  **default:** "``{current_version} → {new_version}``"
+  **default:** "``Bump version: {current_version} → {new_version}``"
 
   The commit message to use when creating a commit. Only valid when using ``--commit`` / ``commit = True``.
 
