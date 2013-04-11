@@ -12,7 +12,7 @@ bumpversion updates all version strings in your source tree by the correct incre
 Installation
 ============
 
-You download and install the latest version of this software from the Python package index as follows::
+You can download and install the latest version of this software from the Python package index (PyPI) as follows::
 
     pip install --upgrade bumpversion
 
