@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='bumpversion',
-    version='0.0.4',
+    version='0.1.0',
     url='https://github.com/peritus/bumpversion',
     author='Filip Noetzel',
     author_email='filip+bumpversion@j03.de',
