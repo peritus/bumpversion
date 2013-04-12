@@ -9,6 +9,12 @@ bumpversion updates all version strings in your source tree by the correct incre
 .. image:: https://travis-ci.org/peritus/bumpversion.png?branch=master
   :target: https://travis-ci.org/peritus/bumpversion
 
+Screencast
+==========
+
+.. image:: https://dl.dropboxusercontent.com/u/8735936/Screen%20Shot%202013-04-12%20at%202.43.46%20PM.png
+  :target: http://goo.gl/xogFw
+
 Installation
 ============
 
