@@ -11,9 +11,9 @@ setup(
     description='Version-bump your software with a single command',
     long_description=open('README.rst', 'r').read(),
     entry_points={
-      'console_scripts': [
+        'console_scripts': [
         'bumpversion = bumpversion:main',
-       ]
+        ]
     },
     classifiers=(
         'Development Status :: 3 - Alpha',

@@ -10,6 +10,7 @@ from shlex import split as shlex_split
 
 from bumpversion import main
 
+
 def test_usage_string(tmpdir, capsys):
     tmpdir.chdir()
 
@@ -51,6 +52,7 @@ optional arguments:
                         {current_version} → {new_version})
 """.lstrip()
 
+
 def test_defaults_in_usage_with_config(tmpdir, capsys):
     tmpdir.chdir()
     tmpdir.join("mydefaults.cfg").write("""[bumpversion]
@@ -68,16 +70,19 @@ files: file1 file2 file3""")
     assert "[--new-version VERSION]" in out
     assert "[file [file ...]]" in out
 
+
 def test_missing_explicit_config_file(tmpdir):
     tmpdir.chdir()
     with pytest.raises(argparse.ArgumentTypeError):
         main(['--config-file', 'missing.cfg'])
+
 
 def test_simple_replacement(tmpdir):
     tmpdir.join("VERSION").write("1.2.0")
     tmpdir.chdir()
     main(shlex_split("--current-version 1.2.0 --new-version 1.2.1 VERSION"))
     assert "1.2.1" == tmpdir.join("VERSION").read()
+
 
 def test_config_file(tmpdir):
     tmpdir.join("file1").write("0.9.34")
@@ -91,6 +96,7 @@ files: file1""")
 
     assert "0.9.35" == tmpdir.join("file1").read()
 
+
 def test_default_config_file(tmpdir):
     tmpdir.join("file2").write("0.10.2")
     tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
@@ -102,6 +108,7 @@ files: file2""")
     main([])
 
     assert "0.10.3" == tmpdir.join("file2").read()
+
 
 def test_config_file_is_updated(tmpdir):
     tmpdir.join("file3").write("13")
@@ -118,6 +125,7 @@ current_version = 14
 files = file3
 
 """ == tmpdir.join(".bumpversion.cfg").read()
+
 
 def test_dry_run(tmpdir):
 
@@ -137,6 +145,7 @@ files: file4"""
     assert config == tmpdir.join(".bumpversion.cfg").read()
     assert version == tmpdir.join("file4").read()
 
+
 def test_bump_version(tmpdir):
 
     tmpdir.join("file5").write("1.0.0")
@@ -145,19 +154,21 @@ def test_bump_version(tmpdir):
 
     assert '1.0.1' == tmpdir.join("file5").read()
 
+
 def test_bump_version_custom_parse(tmpdir):
 
     tmpdir.join("file6").write("XXX1;0;0")
     tmpdir.chdir()
     main([
-      '--current-version', 'XXX1;0;0',
-      '--bump', 'garlg',
-      '--parse', 'XXX(?P<spam>\d+);(?P<garlg>\d+);(?P<slurp>\d+)',
-      '--serialize', 'XXX{spam};{garlg};{slurp}',
-      'file6'
-    ])
+         '--current-version', 'XXX1;0;0',
+         '--bump', 'garlg',
+         '--parse', 'XXX(?P<spam>\d+);(?P<garlg>\d+);(?P<slurp>\d+)',
+         '--serialize', 'XXX{spam};{garlg};{slurp}',
+         'file6'
+         ])
 
     assert 'XXX1;1;0' == tmpdir.join("file6").read()
+
 
 def test_git_dirty_workdir(tmpdir):
     tmpdir.chdir()
@@ -169,12 +180,14 @@ def test_git_dirty_workdir(tmpdir):
     with pytest.raises(AssertionError):
         main(['--current-version', '1', '--new-version', '2', 'file7'])
 
+
 def test_bump_major(tmpdir):
     tmpdir.join("fileMAJORBUMP").write("4.2.8")
     tmpdir.chdir()
     main(['--current-version', '4.2.8', '--bump', 'major', 'fileMAJORBUMP'])
 
     assert '5.0.0' == tmpdir.join("fileMAJORBUMP").read()
+
 
 def test_git_commit(tmpdir):
     tmpdir.chdir()
@@ -197,19 +210,19 @@ def test_git_commit(tmpdir):
 
     assert 'v47.1.2' in tag_out
 
+
 def test_bump_version_ENV(tmpdir):
 
     tmpdir.join("on_jenkins").write("2.3.4")
     tmpdir.chdir()
     environ['BUILD_NUMBER'] = "567"
     main([
-      '--current-version', '2.3.4',
-      '--bump', 'patch',
-      '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+).*',
-      '--serialize', '{major}.{minor}.{patch}.pre{$BUILD_NUMBER}',
-      'on_jenkins',
-    ])
+         '--current-version', '2.3.4',
+         '--bump', 'patch',
+         '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+).*',
+         '--serialize', '{major}.{minor}.{patch}.pre{$BUILD_NUMBER}',
+         'on_jenkins',
+         ])
     del environ['BUILD_NUMBER']
 
     assert '2.3.5.pre567' == tmpdir.join("on_jenkins").read()
-
