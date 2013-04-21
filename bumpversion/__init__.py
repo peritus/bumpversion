@@ -184,5 +184,6 @@ def main(args=None):
 
             subprocess.check_call(
                 ["git", "commit", "-m", args.message.format(**formatargs)])
-            subprocess.check_call(
-                ["git", "tag", "v{new_version}".format(**formatargs)])
+            if args.tag:
+                subprocess.check_call(
+                    ["git", "tag", "v{new_version}".format(**formatargs)])

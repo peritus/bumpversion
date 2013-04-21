@@ -196,7 +196,7 @@ def test_git_commit(tmpdir):
     subprocess.check_call(["git", "add", "VERSION"])
     subprocess.check_call(["git", "commit", "-m", "initial commit"])
 
-    main(['--current-version', '47.1.1', '--commit', '--tag', 'VERSION'])
+    main(['--current-version', '47.1.1', '--commit', 'VERSION'])
 
     assert '47.1.2' == tmpdir.join("VERSION").read()
 
@@ -208,7 +208,17 @@ def test_git_commit(tmpdir):
 
     tag_out = subprocess.check_output(["git", "tag"])
 
-    assert 'v47.1.2' in tag_out
+    assert 'v47.1.2' not in tag_out
+
+    main(['--current-version', '47.1.2', '--commit', '--tag', 'VERSION'])
+
+    assert '47.1.3' == tmpdir.join("VERSION").read()
+
+    log = subprocess.check_output(["git", "log", "--decorate=full", "-p"])
+
+    tag_out = subprocess.check_output(["git", "tag"])
+
+    assert 'v47.1.3' in tag_out
 
 
 def test_bump_version_ENV(tmpdir):
