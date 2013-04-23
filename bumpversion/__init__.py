@@ -5,6 +5,7 @@ import argparse
 import os
 import warnings
 import re
+import shlex
 import sre_constants
 import subprocess
 from string import Formatter
@@ -121,6 +122,8 @@ def main(args=None):
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
                          help='Commit message',
                          default='Bump version: {current_version} → {new_version}')
+    parser3.add_argument('--tag-options', metavar='TAG_OPTIONS',
+                         dest='tag_options', help='Extra tag options for the tag command, e.g. --sign')
 
     files = []
     if 'files' in defaults:
@@ -185,5 +188,7 @@ def main(args=None):
             subprocess.check_call(
                 ["git", "commit", "-m", args.message.format(**formatargs)])
             if args.tag:
-                subprocess.check_call(
-                    ["git", "tag", "v{new_version}".format(**formatargs)])
+                tag_args = ["git", "tag", "v{new_version}".format(**formatargs)]
+                if args.tag_options:
+                    tag_args.extend(shlex.split(args.tag_options.format(**formatargs)))
+                subprocess.check_call(tag_args)

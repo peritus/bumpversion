@@ -23,6 +23,7 @@ def test_usage_string(tmpdir, capsys):
 usage: py.test [-h] [--config-file FILE] [--bump PART] [--parse REGEX]
                [--serialize FORMAT] [--current-version VERSION] [--dry-run]
                --new-version VERSION [--commit] [--tag] [--message COMMIT_MSG]
+               [--tag-options TAG_OPTIONS]
                file [file ...]
 
 Bumps version strings
@@ -50,6 +51,9 @@ optional arguments:
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
+  --tag-options TAG_OPTIONS
+                        Extra tag options for the tag command, e.g. --sign
+                        (default: None)
 """.lstrip()
 
 
@@ -219,6 +223,21 @@ def test_git_commit(tmpdir):
     tag_out = subprocess.check_output(["git", "tag"])
 
     assert 'v47.1.3' in tag_out
+
+    describe_out = subprocess.call(["git", "describe"])
+    assert 128 == describe_out
+
+    main(['--current-version', '47.1.3', '--commit', '--tag', '--tag-options', '"-m \\"test v{new_version}-tag\\""', 'VERSION'])
+
+    assert '47.1.4' == tmpdir.join("VERSION").read()
+
+    tag_out = subprocess.check_output(["git", "tag"])
+
+    assert 'v47.1.4' in tag_out
+
+    describe_out = subprocess.check_output(["git", "describe"])
+
+    assert 'v47.1.4' in describe_out
 
 
 def test_bump_version_ENV(tmpdir):
