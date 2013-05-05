@@ -4,7 +4,8 @@ bumpversion
 
 Version-bump your software with a single command!
 
-bumpversion updates all version strings in your source tree by the correct increment, commits that change to git and tags it.
+bumpversion updates all version strings in your source tree by the correct
+increment, commits that change to git or Mercurial and tags it.
 
 .. image:: https://travis-ci.org/peritus/bumpversion.png?branch=master
   :target: https://travis-ci.org/peritus/bumpversion
@@ -112,12 +113,14 @@ Options
 ``--tag`` / ``tag = True``
   **default:** `Don't create a tag`
 
-  Whether to create a git tag, that is the new version, prefixed with the character "``v``". Don't forget to ``git-push`` with the ``--tags`` flag.
+  Whether to create a tag, that is the new version, prefixed with the character
+  "``v``". If you are using git, don't forget to ``git-push`` with the
+  ``--tags`` flag.
 
 ``--commit`` / ``commit = True``
   **default:** `Don't create a commit`
 
-  Whether to create a git commit
+  Whether to create a commit
 
 ``--message`` / ``message =``
   **default:** "``Bump version: {current_version} → {new_version}``"

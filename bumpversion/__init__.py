@@ -41,6 +41,39 @@ class Git(object):
         subprocess.check_call(["git", "tag", name])
 
 
+class Mercurial(object):
+
+    @classmethod
+    def is_usable(cls):
+        return os.path.isdir(".hg")
+
+    @classmethod
+    def assert_nondirty(cls):
+        lines = [
+            line.strip() for line in
+            subprocess.check_output(
+                ["hg", "status", "-mard"]).splitlines()
+            if not line.strip().startswith("??")
+        ]
+
+        if lines:
+            assert False, "Mercurial working directory not clean:\n{}".format(
+                "\n".join(lines))
+
+    @classmethod
+    def add_path(cls, path):
+        pass
+
+    @classmethod
+    def commit(cls, message):
+        subprocess.check_call(["hg", "commit", "-m", message])
+
+    @classmethod
+    def tag(cls, name):
+        subprocess.check_call(["hg", "tag", name])
+
+VCS = [Git, Mercurial]
+
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.iteritems()))
 
@@ -167,8 +200,10 @@ def main(args=None):
     if len(args.files) is 0:
         warnings.warn("No files specified")
 
-    if Git.is_usable():
-        Git.assert_nondirty()
+    for vcs in VCS:
+        if vcs.is_usable():
+            vcs.assert_nondirty()
+            break
 
     for path in args.files:
         with open(path, 'r') as f:
@@ -196,7 +231,7 @@ def main(args=None):
     if args.commit:
         if not args.dry_run:
             for path in commit_files:
-                Git.add_path(path)
+                vcs.add_path(path)
 
             formatargs = {
                 "current_version": args.current_version,
@@ -204,7 +239,7 @@ def main(args=None):
             }
             formatargs.update(prefixed_environ())
 
-            Git.commit(message=args.message.format(**formatargs))
+            vcs.commit(message=args.message.format(**formatargs))
 
             if args.tag:
-                Git.tag("v{new_version}".format(**formatargs))
+                vcs.tag("v{new_version}".format(**formatargs))

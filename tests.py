@@ -10,6 +10,7 @@ from shlex import split as shlex_split
 
 from bumpversion import main
 
+environ['HGENCODING'] = 'UTF-8'
 
 def test_usage_string(tmpdir, capsys):
     tmpdir.chdir()
@@ -170,12 +171,13 @@ def test_bump_version_custom_parse(tmpdir):
     assert 'XXX1;1;0' == tmpdir.join("file6").read()
 
 
-def test_git_dirty_workdir(tmpdir):
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_dirty_workdir(tmpdir, vcs):
     tmpdir.chdir()
-    subprocess.check_call(["git", "init"])
+    subprocess.check_call([vcs, "init"])
     tmpdir.join("dirty").write("i'm dirty")
 
-    subprocess.check_call(["git", "add", "dirty"])
+    subprocess.check_call([vcs, "add", "dirty"])
 
     with pytest.raises(AssertionError):
         main(['--current-version', '1', '--new-version', '2', 'file7'])
@@ -188,25 +190,25 @@ def test_bump_major(tmpdir):
 
     assert '5.0.0' == tmpdir.join("fileMAJORBUMP").read()
 
-
-def test_git_commit(tmpdir):
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_commit(tmpdir, vcs):
     tmpdir.chdir()
-    subprocess.check_call(["git", "init"])
+    subprocess.check_call([vcs, "init"])
     tmpdir.join("VERSION").write("47.1.1")
-    subprocess.check_call(["git", "add", "VERSION"])
-    subprocess.check_call(["git", "commit", "-m", "initial commit"])
+    subprocess.check_call([vcs, "add", "VERSION"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['--current-version', '47.1.1', '--commit', 'VERSION'])
 
     assert '47.1.2' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output(["git", "log", "--decorate=full", "-p"])
+    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
 
     assert '-47.1.1' in log
     assert '+47.1.2' in log
-    assert u'Bump version: 47.1.1 → 47.1.2' in log.decode("utf-8")
+    assert u'Bump version: 47.1.1 → 47.1.2' in log
 
-    tag_out = subprocess.check_output(["git", "tag"])
+    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert 'v47.1.2' not in tag_out
 
@@ -214,9 +216,9 @@ def test_git_commit(tmpdir):
 
     assert '47.1.3' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output(["git", "log", "--decorate=full", "-p"])
+    log = subprocess.check_output([vcs, "log", "-p"])
 
-    tag_out = subprocess.check_output(["git", "tag"])
+    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert 'v47.1.3' in tag_out
 

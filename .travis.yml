@@ -4,8 +4,9 @@ python:
   - 2.7
 
 install:
-  - git config --global user.email "bumpversion-test@travis.ci"
-  - git config --global user.name "Testing on Travis CI"
+  - git config --global user.email "bumpversion-test-git@travis.ci"
+  - git config --global user.name "Testing Git on Travis CI"
+  - echo -e '[ui]\nusername = Testing Mercurial on Travis CI <bumpversion-test-hg@travis.ci>' > ~/.hgrc
   - pip install pytest
 
 script: py.test tests.py
