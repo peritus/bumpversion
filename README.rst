@@ -147,6 +147,10 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.2.0**
+
+- Mercurial support
+
 **v0.1.1**
 
 - Only create a tag when it's requested (thanks @gvangool)
