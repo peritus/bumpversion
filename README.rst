@@ -144,4 +144,14 @@ Development
 
 Development of this happens on GitHub, patches including tests, documentation are very welcome, as well as bug reports! Also please open an issue if this tool does not support every aspect of bumping versions in your development workflow, as it is intended to be very versatile.
 
+Changes
+=======
+
+**v0.1.1**
+
+- Only create a tag when it's requested (thanks @gvangool)
+
+**v0.1.0**
+
+- Initial public version
 
