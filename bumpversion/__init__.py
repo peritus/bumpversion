@@ -9,6 +9,37 @@ import sre_constants
 import subprocess
 from string import Formatter
 
+class Git(object):
+
+    @classmethod
+    def is_usable(cls):
+        return os.path.isdir(".git")
+
+    @classmethod
+    def assert_nondirty(cls):
+        lines = [
+            line.strip() for line in
+            subprocess.check_output(
+                ["git", "status", "--porcelain"]).splitlines()
+            if not line.strip().startswith("??")
+        ]
+
+        if lines:
+            assert False, "Git working directory not clean:\n{}".format(
+                "\n".join(lines))
+
+    @classmethod
+    def add_path(cls, path):
+        subprocess.check_call(["git", "add", path])
+
+    @classmethod
+    def commit(cls, message):
+        subprocess.check_call(["git", "commit", "-m", message])
+
+    @classmethod
+    def tag(cls, name):
+        subprocess.check_call(["git", "tag", name])
+
 
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.iteritems()))
@@ -136,17 +167,8 @@ def main(args=None):
     if len(args.files) is 0:
         warnings.warn("No files specified")
 
-    if os.path.isdir(".git"):
-        lines = [
-            line.strip() for line in
-            subprocess.check_output(
-                ["git", "status", "--porcelain"]).splitlines()
-            if not line.strip().startswith("??")
-        ]
-
-        if lines:
-            assert False, "Git working directory not clean:\n{}".format(
-                "\n".join(lines))
+    if Git.is_usable():
+        Git.assert_nondirty()
 
     for path in args.files:
         with open(path, 'r') as f:
@@ -174,7 +196,7 @@ def main(args=None):
     if args.commit:
         if not args.dry_run:
             for path in commit_files:
-                subprocess.check_call(["git", "add", path])
+                Git.add_path(path)
 
             formatargs = {
                 "current_version": args.current_version,
@@ -182,8 +204,7 @@ def main(args=None):
             }
             formatargs.update(prefixed_environ())
 
-            subprocess.check_call(
-                ["git", "commit", "-m", args.message.format(**formatargs)])
+            Git.commit(message=args.message.format(**formatargs))
+
             if args.tag:
-                subprocess.check_call(
-                    ["git", "tag", "v{new_version}".format(**formatargs)])
+                Git.tag("v{new_version}".format(**formatargs))
