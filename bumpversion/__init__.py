@@ -9,6 +9,7 @@ import sre_constants
 import subprocess
 from string import Formatter
 
+
 class Git(object):
 
     @classmethod
@@ -73,6 +74,7 @@ class Mercurial(object):
         subprocess.check_call(["hg", "tag", name])
 
 VCS = [Git, Mercurial]
+
 
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.iteritems()))

@@ -12,6 +12,7 @@ from bumpversion import main
 
 environ['HGENCODING'] = 'UTF-8'
 
+
 def test_usage_string(tmpdir, capsys):
     tmpdir.chdir()
 
@@ -189,6 +190,7 @@ def test_bump_major(tmpdir):
     main(['--current-version', '4.2.8', '--bump', 'major', 'fileMAJORBUMP'])
 
     assert '5.0.0' == tmpdir.join("fileMAJORBUMP").read()
+
 
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_commit(tmpdir, vcs):
