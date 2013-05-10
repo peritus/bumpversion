@@ -193,7 +193,7 @@ def test_bump_major(tmpdir):
 
 
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
-def test_commit(tmpdir, vcs):
+def test_commit_and_tag(tmpdir, vcs):
     tmpdir.chdir()
     subprocess.check_call([vcs, "init"])
     tmpdir.join("VERSION").write("47.1.1")
