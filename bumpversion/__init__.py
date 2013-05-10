@@ -136,6 +136,13 @@ def main(args=None):
         config = ConfigParser.SafeConfigParser()
         config.read([known_args.config_file])
         defaults = dict(config.items("bumpversion"))
+
+        for boolvaluename in ("commit", "tag", "dry_run"):
+            try:
+                defaults[boolvaluename] = config.getboolean("bumpversion", boolvaluename)
+            except ConfigParser.NoOptionError:
+                pass # no default value then ;)
+
     elif known_args.config_file != parser1.get_default('config_file'):
         raise argparse.ArgumentTypeError("Could not read config file at {}".format(
             known_args.config_file))

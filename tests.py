@@ -224,6 +224,30 @@ def test_commit(tmpdir, vcs):
 
     assert 'v47.1.3' in tag_out
 
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_commit_explicitly_false(tmpdir, vcs):
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+current_version: 10.0.0
+commit = False
+tag = False""")
+
+    subprocess.check_call([vcs, "init"])
+    tmpdir.join("trackedfile").write("10.0.0")
+    subprocess.check_call([vcs, "add", "trackedfile"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    main(['--bump', 'patch', 'trackedfile'])
+
+    assert '10.0.1' == tmpdir.join("trackedfile").read()
+
+    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+    assert "10.0.1" not in log
+
+    diff = subprocess.check_output([vcs, "diff"]).decode("utf-8")
+    assert "10.0.1" in diff
+
 
 def test_bump_version_ENV(tmpdir):
 
