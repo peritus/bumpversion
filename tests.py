@@ -224,6 +224,7 @@ def test_commit_and_tag(tmpdir, vcs):
 
     assert 'v47.1.3' in tag_out
 
+
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_commit_explicitly_false(tmpdir, vcs):
     tmpdir.chdir()

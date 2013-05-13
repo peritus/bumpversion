@@ -139,9 +139,10 @@ def main(args=None):
 
         for boolvaluename in ("commit", "tag", "dry_run"):
             try:
-                defaults[boolvaluename] = config.getboolean("bumpversion", boolvaluename)
+                defaults[boolvaluename] = config.getboolean(
+                    "bumpversion", boolvaluename)
             except ConfigParser.NoOptionError:
-                pass # no default value then ;)
+                pass  # no default value then ;)
 
     elif known_args.config_file != parser1.get_default('config_file'):
         raise argparse.ArgumentTypeError("Could not read config file at {}".format(
