@@ -45,7 +45,7 @@ class Git(object):
                 "--abbrev=40",
             ]).split("-")
         except subprocess.CalledProcessError:
-            #logging.warn("Error when running git describe")
+            # logging.warn("Error when running git describe")
             return {}
 
         info = {}
@@ -175,7 +175,6 @@ def main(args=None):
 
     if 'current_version' in vcs_info:
         defaults['current_version'] = vcs_info['current_version']
-
 
     config = None
     if os.path.exists(known_args.config_file):

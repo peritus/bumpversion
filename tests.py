@@ -266,6 +266,7 @@ def test_bump_version_ENV(tmpdir):
 
     assert '2.3.5.pre567' == tmpdir.join("on_jenkins").read()
 
+
 def test_current_version_from_tag(tmpdir):
     # prepare
     tmpdir.join("update_from_tag").write("26.6.0")
@@ -279,6 +280,7 @@ def test_current_version_from_tag(tmpdir):
     main(['--bump', 'patch', 'update_from_tag'])
 
     assert '26.6.1' == tmpdir.join("update_from_tag").read()
+
 
 def test_current_version_from_tag_not_written_to_config_file(tmpdir):
     # prepare
@@ -296,13 +298,14 @@ def test_current_version_from_tag_not_written_to_config_file(tmpdir):
     main([
         '--bump',
         'patch',
-        'updated_but_not_config_file', 
+        'updated_but_not_config_file',
          '--commit',
          '--tag',
-        ])
+         ])
 
     assert '14.6.1' == tmpdir.join("updated_but_not_config_file").read()
     assert '14.6.1' not in tmpdir.join(".bumpversion.cfg").read()
+
 
 def test_distance_to_latest_tag_as_part_of_new_version(tmpdir):
     # prepare
@@ -327,6 +330,7 @@ def test_distance_to_latest_tag_as_part_of_new_version(tmpdir):
 
     assert '19.6.1-pre3' == tmpdir.join("mysourcefile").read()
 
+
 def test_override_vcs_current_version(tmpdir):
     # prepare
     tmpdir.join("contains_actual_version").write("6.7.8")
@@ -348,4 +352,3 @@ def test_override_vcs_current_version(tmpdir):
     main(['--bump', 'patch', '--current-version', '7.0.0', 'contains_actual_version'])
 
     assert '7.0.1' == tmpdir.join("contains_actual_version").read()
-
