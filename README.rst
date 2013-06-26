@@ -147,6 +147,10 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.2.1**
+
+- If available, use git to learn about current version
+
 **v0.2.0**
 
 - Mercurial support
