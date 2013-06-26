@@ -30,6 +30,39 @@ class Git(object):
                 "\n".join(lines))
 
     @classmethod
+    def latest_tag_info(cls):
+        try:
+            # git-describe doesn't update the git-index, so we do that
+            subprocess.check_call(["git", "update-index", "--refresh"])
+
+            # get info about the latest tag in git
+            describe_out = subprocess.check_output([
+                "git",
+                "describe",
+                "--dirty",
+                "--tags",
+                "--long",
+                "--abbrev=40",
+            ]).split("-")
+        except subprocess.CalledProcessError:
+            #logging.warn("Error when running git describe")
+            return {}
+
+        info = {}
+
+        if describe_out[-1] is "dirty":
+            info["dirty"] = True
+            describe_out.pop()
+
+        info["commit_sha"] = describe_out.pop().lstrip("g")
+        info["distance_to_latest_tag"] = int(describe_out.pop())
+        info["current_version"] = describe_out.pop().lstrip("v")
+
+        assert 0 == len(describe_out)
+
+        return info
+
+    @classmethod
     def add_path(cls, path):
         subprocess.check_call(["git", "add", path])
 
@@ -47,6 +80,10 @@ class Mercurial(object):
     @classmethod
     def is_usable(cls):
         return os.path.isdir(".hg")
+
+    @classmethod
+    def latest_tag_info(cls):
+        return {}
 
     @classmethod
     def assert_nondirty(cls):
@@ -80,7 +117,7 @@ def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.iteritems()))
 
 
-def attempt_version_bump(args):
+def attempt_version_bump(args, context):
     try:
         regex = re.compile(args.parse)
     except sre_constants.error:
@@ -109,7 +146,7 @@ def attempt_version_bump(args):
             parsed[label] = 0
 
     assert bumped
-    parsed.update(prefixed_environ())
+    parsed.update(context)
 
     try:
         return args.serialize.format(**parsed)
@@ -130,12 +167,21 @@ def main(args=None):
     known_args, remaining_argv = parser1.parse_known_args(args)
 
     defaults = {}
+    vcs_info = {}
+
+    for vcs in VCS:
+        if vcs.is_usable():
+            vcs_info.update(vcs.latest_tag_info())
+
+    if 'current_version' in vcs_info:
+        defaults['current_version'] = vcs_info['current_version']
+
 
     config = None
     if os.path.exists(known_args.config_file):
         config = ConfigParser.SafeConfigParser()
         config.read([known_args.config_file])
-        defaults = dict(config.items("bumpversion"))
+        defaults.update(dict(config.items("bumpversion")))
 
         for boolvaluename in ("commit", "tag", "dry_run"):
             try:
@@ -167,9 +213,13 @@ def main(args=None):
 
     defaults.update(vars(known_args))
 
-    _attempted_new_version = attempt_version_bump(known_args)
-    if not ('new_version' in defaults) and _attempted_new_version != None:
-        defaults['new_version'] = _attempted_new_version
+    attempted_new_version = attempt_version_bump(
+        known_args,
+        context=dict(list(prefixed_environ().items()) + list(vcs_info.items()))
+    )
+
+    if not ('new_version' in defaults) and attempted_new_version != None:
+        defaults['new_version'] = attempted_new_version
 
     parser3 = argparse.ArgumentParser(
         description='Bumps version strings',
@@ -232,7 +282,13 @@ def main(args=None):
 
     if config:
         config.remove_option('bumpversion', 'new_version')
-        config.set('bumpversion', 'current_version', args.new_version)
+
+        if args.commit and args.tag and 'current_version' in vcs_info:
+            # we don't need to write it to the config file, because it's
+            # committed and tagged
+            config.remove_option('bumpversion', 'current_version')
+        else:
+            config.set('bumpversion', 'current_version', args.new_version)
 
         if not args.dry_run:
             config.write(open(known_args.config_file, 'wb'))

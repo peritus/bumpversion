@@ -265,3 +265,87 @@ def test_bump_version_ENV(tmpdir):
     del environ['BUILD_NUMBER']
 
     assert '2.3.5.pre567' == tmpdir.join("on_jenkins").read()
+
+def test_current_version_from_tag(tmpdir):
+    # prepare
+    tmpdir.join("update_from_tag").write("26.6.0")
+    tmpdir.chdir()
+    subprocess.check_call(["git", "init"])
+    subprocess.check_call(["git", "add", "update_from_tag"])
+    subprocess.check_call(["git", "commit", "-m", "initial"])
+    subprocess.check_call(["git", "tag", "v26.6.0"])
+
+    # don't give current-version, that should come from tag
+    main(['--bump', 'patch', 'update_from_tag'])
+
+    assert '26.6.1' == tmpdir.join("update_from_tag").read()
+
+def test_current_version_from_tag_not_written_to_config_file(tmpdir):
+    # prepare
+    tmpdir.join("updated_but_not_config_file").write("14.6.0")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]""")
+
+    subprocess.check_call(["git", "init"])
+    subprocess.check_call(["git", "add", "updated_but_not_config_file"])
+    subprocess.check_call(["git", "commit", "-m", "initial"])
+    subprocess.check_call(["git", "tag", "v14.6.0"])
+
+    # don't give current-version, that should come from tag
+    main([
+        '--bump',
+        'patch',
+        'updated_but_not_config_file', 
+         '--commit',
+         '--tag',
+        ])
+
+    assert '14.6.1' == tmpdir.join("updated_but_not_config_file").read()
+    assert '14.6.1' not in tmpdir.join(".bumpversion.cfg").read()
+
+def test_distance_to_latest_tag_as_part_of_new_version(tmpdir):
+    # prepare
+    tmpdir.join("mysourcefile").write("19.6.0")
+    tmpdir.chdir()
+
+    subprocess.check_call(["git", "init"])
+    subprocess.check_call(["git", "add", "mysourcefile"])
+    subprocess.check_call(["git", "commit", "-m", "initial"])
+    subprocess.check_call(["git", "tag", "v19.6.0"])
+    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 1"])
+    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 2"])
+    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 3"])
+
+    # don't give current-version, that should come from tag
+    main([
+         '--bump', 'patch',
+         '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+).*',
+         '--serialize', '{major}.{minor}.{patch}-pre{distance_to_latest_tag}',
+         'mysourcefile',
+         ])
+
+    assert '19.6.1-pre3' == tmpdir.join("mysourcefile").read()
+
+def test_override_vcs_current_version(tmpdir):
+    # prepare
+    tmpdir.join("contains_actual_version").write("6.7.8")
+    tmpdir.chdir()
+    subprocess.check_call(["git", "init"])
+    subprocess.check_call(["git", "add", "contains_actual_version"])
+    subprocess.check_call(["git", "commit", "-m", "initial"])
+    subprocess.check_call(["git", "tag", "v6.7.8"])
+
+    # update file
+    tmpdir.join("contains_actual_version").write("7.0.0")
+    subprocess.check_call(["git", "add", "contains_actual_version"])
+
+    # but forgot to tag or forgot to push --tags
+    subprocess.check_call(["git", "commit", "-m", "major release"])
+
+    # if we don't give current-version here we get
+    # "AssertionError: Did not find string 6.7.8 in file contains_actual_version"
+    main(['--bump', 'patch', '--current-version', '7.0.0', 'contains_actual_version'])
+
+    assert '7.0.1' == tmpdir.join("contains_actual_version").read()
+
