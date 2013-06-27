@@ -237,10 +237,21 @@ def main(args=None):
     parser3.add_argument('--new-version', metavar='VERSION',
                          help='New version that should be in the files',
                          required=not 'new_version' in defaults)
-    parser3.add_argument('--commit', action='store_true',
-                         help='Create a commit in version control')
-    parser3.add_argument('--tag', action='store_true',
+
+    commitgroup = parser3.add_mutually_exclusive_group()
+
+    commitgroup.add_argument('--commit', action='store_true', dest="commit",
+                         help='Commit to version control', default=False)
+    commitgroup.add_argument('--no-commit', action='store_false', dest="commit",
+                         help='Do not commit to version control', default=argparse.SUPPRESS)
+
+    taggroup = parser3.add_mutually_exclusive_group()
+
+    taggroup.add_argument('--tag', action='store_true', dest="tag", default=False,
                          help='Create a tag in version control')
+    taggroup.add_argument('--no-tag', action='store_false', dest="tag",
+                         help='Do not create a tag in version control', default=argparse.SUPPRESS)
+
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
                          help='Commit message',
                          default='Bump version: {current_version} → {new_version}')

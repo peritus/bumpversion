@@ -24,7 +24,8 @@ def test_usage_string(tmpdir, capsys):
     assert out == u"""
 usage: py.test [-h] [--config-file FILE] [--bump PART] [--parse REGEX]
                [--serialize FORMAT] [--current-version VERSION] [--dry-run]
-               --new-version VERSION [--commit] [--tag] [--message COMMIT_MSG]
+               --new-version VERSION [--commit | --no-commit]
+               [--tag | --no-tag] [--message COMMIT_MSG]
                file [file ...]
 
 Bumps version strings
@@ -47,12 +48,14 @@ optional arguments:
   --new-version VERSION
                         New version that should be in the files (default:
                         None)
-  --commit              Create a commit in version control (default: False)
+  --commit              Commit to version control (default: False)
+  --no-commit           Do not commit to version control
   --tag                 Create a tag in version control (default: False)
+  --no-tag              Do not create a tag in version control
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
-""".lstrip()
+""".lstrip(), u"Usage string changed to \n\n\n{}\n\n\n".format(out)
 
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
@@ -249,6 +252,29 @@ tag = False""")
     diff = subprocess.check_output([vcs, "diff"]).decode("utf-8")
     assert "10.0.1" in diff
 
+
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_commit_configfile_true_cli_false_override(tmpdir, vcs):
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+current_version: 27.0.0
+commit = True""")
+
+    subprocess.check_call([vcs, "init"])
+    tmpdir.join("dontcommitfile").write("27.0.0")
+    subprocess.check_call([vcs, "add", "dontcommitfile"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    main(['--bump', 'patch', '--no-commit', 'dontcommitfile'])
+
+    assert '27.0.1' == tmpdir.join("dontcommitfile").read()
+
+    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+    assert "27.0.1" not in log
+
+    diff = subprocess.check_output([vcs, "diff"]).decode("utf-8")
+    assert "27.0.1" in diff
 
 def test_bump_version_ENV(tmpdir):
 
