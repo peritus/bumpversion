@@ -110,14 +110,14 @@ Options
 
   This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are parsed values of the named groups specified in ``--parse`` as well as all environment variables (prefixed with ``$``).
 
-``--tag`` / ``tag = True``
+``(--tag | --no-tag)`` / ``tag = (True | False)``
   **default:** `Don't create a tag`
 
   Whether to create a tag, that is the new version, prefixed with the character
   "``v``". If you are using git, don't forget to ``git-push`` with the
   ``--tags`` flag.
 
-``--commit`` / ``commit = True``
+``(--commit | --no-commit)`` / ``commit = (True | False)``
   **default:** `Don't create a commit`
 
   Whether to create a commit
