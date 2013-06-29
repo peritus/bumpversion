@@ -144,9 +144,9 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
-**unreleased**
+**v0.3.0**
 
-- **BREAKING CHANGE** The `--bump` argument was removed, this is now the first
+- **BREAKING CHANGE** The ``--bump`` argument was removed, this is now the first
   positional argument.
   If you used ``bumpversion --bump major`` before, you can use
   ``bumpversion major`` now.
