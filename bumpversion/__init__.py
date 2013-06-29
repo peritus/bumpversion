@@ -139,8 +139,8 @@ def attempt_version_bump(args, context):
 
     bumped = False
     for label in order:
-        if label == args.bump:
-            parsed[args.bump] = int(parsed[args.bump]) + 1
+        if label == args.part:
+            parsed[args.part] = int(parsed[args.part]) + 1
             bumped = True
         elif bumped:
             parsed[label] = 0
@@ -198,9 +198,6 @@ def main(args=None):
 
     parser2.add_argument('--current-version', metavar='VERSION',
                          help='Version that needs to be updated', required=False)
-    parser2.add_argument('--bump', metavar='PART',
-                         help='Part of the version to be bumped.',
-                         default='patch')
     parser2.add_argument('--parse', metavar='REGEX',
                          help='Regex parsing the version string',
                          default='(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)')
@@ -208,7 +205,19 @@ def main(args=None):
                          help='How to format what is parsed back to a version',
                          default='{major}.{minor}.{patch}')
 
-    known_args, remaining_argv = parser2.parse_known_args(remaining_argv)
+    parser2_2 = argparse.ArgumentParser(
+        description='Bumps version strings',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        conflict_handler='resolve',
+        add_help=False,
+        parents=[parser2],
+    )
+    parser2_2.add_argument('part', help='Part of the version to be bumped.', nargs='?')
+
+    known_args, remaining_argv = parser2_2.parse_known_args(remaining_argv)
+
+    if known_args.part:
+        remaining_argv[0:0] = [known_args.part]
 
     defaults.update(vars(known_args))
 
@@ -261,6 +270,8 @@ def main(args=None):
         assert defaults['files'] != None
         files = defaults['files'].split(' ')
 
+    parser3.add_argument('part',
+                         help='Part of the version to be bumped.')
     parser3.add_argument('files', metavar='file',
                          nargs='+' if len(files) == 0 else '*',
                          help='Files to change', default=files)

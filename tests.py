@@ -22,22 +22,22 @@ def test_usage_string(tmpdir, capsys):
     out, err = capsys.readouterr()
     assert err == ""
     assert out == u"""
-usage: py.test [-h] [--config-file FILE] [--bump PART] [--parse REGEX]
-               [--serialize FORMAT] [--current-version VERSION] [--dry-run]
-               --new-version VERSION [--commit | --no-commit]
-               [--tag | --no-tag] [--message COMMIT_MSG]
-               file [file ...]
+usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
+               [--current-version VERSION] [--dry-run] --new-version VERSION
+               [--commit | --no-commit] [--tag | --no-tag]
+               [--message COMMIT_MSG]
+               part file [file ...]
 
 Bumps version strings
 
 positional arguments:
+  part                  Part of the version to be bumped.
   file                  Files to change
 
 optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
-  --bump PART           Part of the version to be bumped. (default: patch)
   --parse REGEX         Regex parsing the version string (default:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
@@ -85,7 +85,7 @@ def test_missing_explicit_config_file(tmpdir):
 def test_simple_replacement(tmpdir):
     tmpdir.join("VERSION").write("1.2.0")
     tmpdir.chdir()
-    main(shlex_split("--current-version 1.2.0 --new-version 1.2.1 VERSION"))
+    main(shlex_split("patch --current-version 1.2.0 --new-version 1.2.1 VERSION"))
     assert "1.2.1" == tmpdir.join("VERSION").read()
 
 
@@ -97,7 +97,7 @@ new_version: 0.9.35
 files: file1""")
 
     tmpdir.chdir()
-    main(shlex_split("--config-file mybumpconfig.cfg"))
+    main(shlex_split("patch --config-file mybumpconfig.cfg"))
 
     assert "0.9.35" == tmpdir.join("file1").read()
 
@@ -110,7 +110,7 @@ new_version: 0.10.3
 files: file2""")
 
     tmpdir.chdir()
-    main([])
+    main(['patch'])
 
     assert "0.10.3" == tmpdir.join("file2").read()
 
@@ -123,7 +123,7 @@ new_version: 14
 files: file3""")
 
     tmpdir.chdir()
-    main([])
+    main(['patch'])
 
     assert """[bumpversion]
 current_version = 14
@@ -145,7 +145,7 @@ files: file4"""
     tmpdir.join(".bumpversion.cfg").write(config)
 
     tmpdir.chdir()
-    main(['--dry-run'])
+    main(['patch', '--dry-run'])
 
     assert config == tmpdir.join(".bumpversion.cfg").read()
     assert version == tmpdir.join("file4").read()
@@ -155,7 +155,7 @@ def test_bump_version(tmpdir):
 
     tmpdir.join("file5").write("1.0.0")
     tmpdir.chdir()
-    main(['--current-version', '1.0.0', 'file5'])
+    main(['patch', '--current-version', '1.0.0', 'file5'])
 
     assert '1.0.1' == tmpdir.join("file5").read()
 
@@ -166,9 +166,9 @@ def test_bump_version_custom_parse(tmpdir):
     tmpdir.chdir()
     main([
          '--current-version', 'XXX1;0;0',
-         '--bump', 'garlg',
          '--parse', 'XXX(?P<spam>\d+);(?P<garlg>\d+);(?P<slurp>\d+)',
          '--serialize', 'XXX{spam};{garlg};{slurp}',
+         'garlg',
          'file6'
          ])
 
@@ -184,13 +184,13 @@ def test_dirty_workdir(tmpdir, vcs):
     subprocess.check_call([vcs, "add", "dirty"])
 
     with pytest.raises(AssertionError):
-        main(['--current-version', '1', '--new-version', '2', 'file7'])
+        main(['patch', '--current-version', '1', '--new-version', '2', 'file7'])
 
 
 def test_bump_major(tmpdir):
     tmpdir.join("fileMAJORBUMP").write("4.2.8")
     tmpdir.chdir()
-    main(['--current-version', '4.2.8', '--bump', 'major', 'fileMAJORBUMP'])
+    main(['--current-version', '4.2.8', 'major', 'fileMAJORBUMP'])
 
     assert '5.0.0' == tmpdir.join("fileMAJORBUMP").read()
 
@@ -203,7 +203,7 @@ def test_commit_and_tag(tmpdir, vcs):
     subprocess.check_call([vcs, "add", "VERSION"])
     subprocess.check_call([vcs, "commit", "-m", "initial commit"])
 
-    main(['--current-version', '47.1.1', '--commit', 'VERSION'])
+    main(['patch', '--current-version', '47.1.1', '--commit', 'VERSION'])
 
     assert '47.1.2' == tmpdir.join("VERSION").read()
 
@@ -217,7 +217,7 @@ def test_commit_and_tag(tmpdir, vcs):
 
     assert 'v47.1.2' not in tag_out
 
-    main(['--current-version', '47.1.2', '--commit', '--tag', 'VERSION'])
+    main(['patch', '--current-version', '47.1.2', '--commit', '--tag', 'VERSION'])
 
     assert '47.1.3' == tmpdir.join("VERSION").read()
 
@@ -242,7 +242,7 @@ tag = False""")
     subprocess.check_call([vcs, "add", "trackedfile"])
     subprocess.check_call([vcs, "commit", "-m", "initial commit"])
 
-    main(['--bump', 'patch', 'trackedfile'])
+    main(['patch', 'trackedfile'])
 
     assert '10.0.1' == tmpdir.join("trackedfile").read()
 
@@ -266,7 +266,7 @@ commit = True""")
     subprocess.check_call([vcs, "add", "dontcommitfile"])
     subprocess.check_call([vcs, "commit", "-m", "initial commit"])
 
-    main(['--bump', 'patch', '--no-commit', 'dontcommitfile'])
+    main(['patch', '--no-commit', 'dontcommitfile'])
 
     assert '27.0.1' == tmpdir.join("dontcommitfile").read()
 
@@ -283,9 +283,9 @@ def test_bump_version_ENV(tmpdir):
     environ['BUILD_NUMBER'] = "567"
     main([
          '--current-version', '2.3.4',
-         '--bump', 'patch',
          '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+).*',
          '--serialize', '{major}.{minor}.{patch}.pre{$BUILD_NUMBER}',
+         'patch',
          'on_jenkins',
          ])
     del environ['BUILD_NUMBER']
@@ -303,7 +303,7 @@ def test_current_version_from_tag(tmpdir):
     subprocess.check_call(["git", "tag", "v26.6.0"])
 
     # don't give current-version, that should come from tag
-    main(['--bump', 'patch', 'update_from_tag'])
+    main(['patch', 'update_from_tag'])
 
     assert '26.6.1' == tmpdir.join("update_from_tag").read()
 
@@ -322,7 +322,6 @@ def test_current_version_from_tag_not_written_to_config_file(tmpdir):
 
     # don't give current-version, that should come from tag
     main([
-        '--bump',
         'patch',
         'updated_but_not_config_file',
          '--commit',
@@ -348,7 +347,7 @@ def test_distance_to_latest_tag_as_part_of_new_version(tmpdir):
 
     # don't give current-version, that should come from tag
     main([
-         '--bump', 'patch',
+         'patch',
          '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+).*',
          '--serialize', '{major}.{minor}.{patch}-pre{distance_to_latest_tag}',
          'mysourcefile',
@@ -375,6 +374,6 @@ def test_override_vcs_current_version(tmpdir):
 
     # if we don't give current-version here we get
     # "AssertionError: Did not find string 6.7.8 in file contains_actual_version"
-    main(['--bump', 'patch', '--current-version', '7.0.0', 'contains_actual_version'])
+    main(['patch', '--current-version', '7.0.0', 'contains_actual_version'])
 
     assert '7.0.1' == tmpdir.join("contains_actual_version").read()

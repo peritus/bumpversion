@@ -28,7 +28,7 @@ Usage
 
 ::
 
-    bumpversion [options] file [file ...]
+    bumpversion [options] part file [file ...]
 
 Config file .bumpversion.cfg
 ++++++++++++++++++++++++++++
@@ -48,6 +48,18 @@ Example ``.bumpversion.cfg``::
 
 Options
 =======
+``part``
+  Part of the version to increase.
+
+  Valid values include those given in the ``--serialize`` / ``--parse`` option.
+
+  Example `bumping to 0.6.0`::
+
+     bumpversion --current-version 0.5.1 minor setup.py
+
+  Example `bumping to 2.0.0`::
+
+     bumpversion --current-version 1.1.9 major setup.py
 
 ``file [file ...]`` / ``files =``
   **no default value**
@@ -62,21 +74,6 @@ Options
 
     [bumpversion]
     files = setup.py src/VERSION.txt
-
-``--bump`` / ``bump =``
-  **default:** ``patch``
-
-  Part of the version to increase.
-
-  Valid values include those given in the ``--serialize`` / ``--parse`` option.
-
-  Example `bumping to 0.6.0`::
-
-     bumpversion --current-version 0.5.1 --bump minor setup.py
-
-  Example `bumping to 2.0.0`::
-
-     bumpversion --current-version 1.1.9 --bump major setup.py
 
 ``--current-version`` / ``current_version =``
   **no default value**
@@ -101,7 +98,7 @@ Options
 
   Regular expression (using `Python regular expression syntax <http://docs.python.org/2/library/re.html#regular-expression-syntax>`_) on how to find and parse the version string.
 
-  Is required to parse all strings produced by ``--serialize``. Named matching groups ("``(?P<name>...)``") provide values to use with the ``--bump`` flag.
+  Is required to parse all strings produced by ``--serialize``. Named matching groups ("``(?P<name>...)``") provide values to as the ``part`` argument.
 
 ``--serialize`` / ``serialize =``
   **default:** "``{major}.{minor}.{patch}``"
@@ -146,6 +143,16 @@ Development of this happens on GitHub, patches including tests, documentation ar
 
 Changes
 =======
+
+**unreleased**
+
+- **BREAKING CHANGE** The `--bump` argument was removed, this is now the first
+  positional argument.
+  If you used ``bumpversion --bump major`` before, you can use
+  ``bumpversion major`` now.
+  If you used ``bumpversion`` without arguments before, you now
+  need to specify the part (previous default was ``patch``) as in
+  ``bumpversion patch``).
 
 **v0.2.2**
 
