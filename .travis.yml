@@ -9,5 +9,5 @@ install:
   - echo -e '[ui]\nusername = Testing Mercurial on Travis CI <bumpversion-test-hg@travis.ci>' > ~/.hgrc
   - pip install pytest
 
-script: py.test tests.py
+script: py.test
 
