@@ -377,3 +377,18 @@ def test_override_vcs_current_version(tmpdir):
     main(['patch', '--current-version', '7.0.0', 'contains_actual_version'])
 
     assert '7.0.1' == tmpdir.join("contains_actual_version").read()
+
+def test_nonexisting_file(tmpdir):
+    tmpdir.chdir()
+    with pytest.raises(IOError):
+        main(shlex_split("patch --current-version 1.2.0 --new-version 1.2.1 doesnotexist.txt"))
+
+def test_nonexisting_file(tmpdir):
+    tmpdir.chdir()
+    tmpdir.join("mysourcecode.txt").write("1.2.3")
+    with pytest.raises(IOError):
+        main(shlex_split("patch --current-version 1.2.3 mysourcecode.txt doesnotexist2.txt"))
+
+    # first file is unchanged because second didn't exist
+    assert '1.2.3' == tmpdir.join("mysourcecode.txt").read()
+

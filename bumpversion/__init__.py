@@ -286,12 +286,18 @@ def main(args=None):
             vcs.assert_nondirty()
             break
 
+    # make sure files exist and contain version string
     for path in args.files:
         with open(path, 'r') as f:
             before = f.read()
 
         assert args.current_version in before, 'Did not find string {} in file {}'.format(
             args.current_version, path)
+
+    # change version string in files
+    for path in args.files:
+        with open(path, 'r') as f:
+            before = f.read()
 
         after = before.replace(args.current_version, args.new_version)
 
