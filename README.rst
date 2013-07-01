@@ -144,6 +144,12 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.3.1**
+
+- bugfix: ``--help`` in git workdir raising AssertionError
+- bugfix: fail earlier if one of files does not exist
+- bugfix: ``commit = True`` / ``tag = True`` in .bumpversion.cfg had no effect
+
 **v0.3.0**
 
 - **BREAKING CHANGE** The ``--bump`` argument was removed, this is now the first
