@@ -43,7 +43,8 @@ class Git(object):
                 "--tags",
                 "--long",
                 "--abbrev=40",
-            ]).split("-")
+            ], stderr=subprocess.STDOUT
+            ).split("-")
         except subprocess.CalledProcessError:
             # logging.warn("Error when running git describe")
             return {}
