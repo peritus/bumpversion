@@ -13,15 +13,7 @@ from bumpversion import main
 environ['HGENCODING'] = 'UTF-8'
 
 
-def test_usage_string(tmpdir, capsys):
-    tmpdir.chdir()
-
-    with pytest.raises(SystemExit):
-        main(['--help'])
-
-    out, err = capsys.readouterr()
-    assert err == ""
-    assert out == u"""
+EXPECTED_USAGE = u"""
 usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
                [--current-version VERSION] [--dry-run] --new-version VERSION
                [--commit | --no-commit] [--tag | --no-tag]
@@ -55,8 +47,40 @@ optional arguments:
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
-""".lstrip(), u"Usage string changed to \n\n\n{}\n\n\n".format(out)
+""".lstrip()
 
+
+def test_usage_string(tmpdir, capsys):
+    tmpdir.chdir()
+
+    with pytest.raises(SystemExit):
+        main(['--help'])
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out == EXPECTED_USAGE, u"Usage string changed to \n\n\n{}\n\n\n".format(out)
+
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_regression_help_in_workdir(tmpdir, capsys, vcs):
+    tmpdir.chdir()
+    tmpdir.join("somesource.txt").write("1.7.2013")
+    subprocess.check_call([vcs, "init"])
+    subprocess.check_call([vcs, "add", "somesource.txt"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    subprocess.check_call([vcs, "tag", "v1.7.2013"])
+
+    with pytest.raises(SystemExit):
+        main(['--help'])
+
+    out, err = capsys.readouterr()
+    assert err == ""
+
+    if vcs == "git":
+        assert "usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]" in out
+        assert "Version that needs to be updated (default: 1.7.2013)" in out
+        assert "[--new-version VERSION]" in out
+    else:
+        assert out == EXPECTED_USAGE
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
     tmpdir.chdir()

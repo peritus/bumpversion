@@ -146,7 +146,6 @@ def attempt_version_bump(args, context):
         elif bumped:
             parsed[label] = 0
 
-    assert bumped
     parsed.update(context)
 
     try:
