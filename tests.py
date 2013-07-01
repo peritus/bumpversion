@@ -451,3 +451,20 @@ def test_nonexisting_file(tmpdir):
     # first file is unchanged because second didn't exist
     assert '1.2.3' == tmpdir.join("mysourcecode.txt").read()
 
+def test_read_version_tags_only(tmpdir):
+    # prepare
+    tmpdir.join("update_from_tag").write("29.6.0")
+    tmpdir.chdir()
+    subprocess.check_call(["git", "init"])
+    subprocess.check_call(["git", "add", "update_from_tag"])
+    subprocess.check_call(["git", "commit", "-m", "initial"])
+    subprocess.check_call(["git", "tag", "v29.6.0"])
+    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "a commit"])
+    subprocess.check_call(["git", "tag", "jenkins-deploy-myproject-2"])
+
+    # don't give current-version, that should come from tag
+    main(['patch', 'update_from_tag'])
+
+    assert '29.6.1' == tmpdir.join("update_from_tag").read()
+
+

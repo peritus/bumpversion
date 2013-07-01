@@ -43,6 +43,7 @@ class Git(object):
                 "--tags",
                 "--long",
                 "--abbrev=40",
+                "--match=v*",
             ], stderr=subprocess.STDOUT
             ).split("-")
         except subprocess.CalledProcessError:
