@@ -251,6 +251,41 @@ def test_commit_and_tag(tmpdir, vcs):
 
     assert 'v47.1.3' in tag_out
 
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_commit_and_tag_with_configfile(tmpdir, vcs):
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]\ncommit = True\ntag = True""")
+
+    subprocess.check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("48.1.1")
+    subprocess.check_call([vcs, "add", "VERSION"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    main(['patch', '--current-version', '48.1.1', '--no-tag', 'VERSION'])
+
+    assert '48.1.2' == tmpdir.join("VERSION").read()
+
+    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+
+    assert '-48.1.1' in log
+    assert '+48.1.2' in log
+    assert u'Bump version: 48.1.1 → 48.1.2' in log
+
+    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+
+    assert 'v48.1.2' not in tag_out
+
+    main(['patch', '--current-version', '48.1.2', 'VERSION'])
+
+    assert '48.1.3' == tmpdir.join("VERSION").read()
+
+    log = subprocess.check_output([vcs, "log", "-p"])
+
+    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+
+    assert 'v48.1.3' in tag_out
+
 
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_commit_explicitly_false(tmpdir, vcs):
