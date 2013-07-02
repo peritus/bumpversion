@@ -60,6 +60,7 @@ def test_usage_string(tmpdir, capsys):
     assert err == ""
     assert out == EXPECTED_USAGE, u"Usage string changed to \n\n\n{}\n\n\n".format(out)
 
+
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     tmpdir.chdir()
@@ -81,6 +82,7 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
         assert "[--new-version VERSION]" in out
     else:
         assert out == EXPECTED_USAGE
+
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
     tmpdir.chdir()
@@ -251,6 +253,7 @@ def test_commit_and_tag(tmpdir, vcs):
 
     assert 'v47.1.3' in tag_out
 
+
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_commit_and_tag_with_configfile(tmpdir, vcs):
     tmpdir.chdir()
@@ -334,6 +337,7 @@ commit = True""")
 
     diff = subprocess.check_output([vcs, "diff"]).decode("utf-8")
     assert "27.0.1" in diff
+
 
 def test_bump_version_ENV(tmpdir):
 
@@ -437,10 +441,12 @@ def test_override_vcs_current_version(tmpdir):
 
     assert '7.0.1' == tmpdir.join("contains_actual_version").read()
 
+
 def test_nonexisting_file(tmpdir):
     tmpdir.chdir()
     with pytest.raises(IOError):
         main(shlex_split("patch --current-version 1.2.0 --new-version 1.2.1 doesnotexist.txt"))
+
 
 def test_nonexisting_file(tmpdir):
     tmpdir.chdir()
@@ -450,6 +456,7 @@ def test_nonexisting_file(tmpdir):
 
     # first file is unchanged because second didn't exist
     assert '1.2.3' == tmpdir.join("mysourcecode.txt").read()
+
 
 def test_read_version_tags_only(tmpdir):
     # prepare
@@ -466,5 +473,3 @@ def test_read_version_tags_only(tmpdir):
     main(['patch', 'update_from_tag'])
 
     assert '29.6.1' == tmpdir.join("update_from_tag").read()
-
-
