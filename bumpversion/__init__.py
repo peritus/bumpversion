@@ -279,6 +279,10 @@ def main(args=None):
     taggroup.add_argument('--no-tag', action='store_false', dest="tag",
                           help='Do not create a tag in version control', default=argparse.SUPPRESS)
 
+    parser3.add_argument('--tag-name', metavar='TAG_NAME',
+                         help='Tag name (only works with --tag)',
+                         default='v{new_version}')
+
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
                          help='Commit message',
                          default='Bump version: {current_version} → {new_version}')
@@ -361,4 +365,5 @@ def main(args=None):
             vcs.commit(message=args.message.format(**formatargs))
 
             if args.tag:
-                vcs.tag("v{new_version}".format(**formatargs))
+                vcs.tag(args.tag_name.format(**formatargs))
+

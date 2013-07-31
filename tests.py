@@ -19,7 +19,7 @@ EXPECTED_USAGE = ("""
 usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
                [--current-version VERSION] [--dry-run] --new-version VERSION
                [--commit | --no-commit] [--tag | --no-tag]
-               [--message COMMIT_MSG]
+               [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part file [file ...]
 
 Bumps version strings
@@ -46,6 +46,8 @@ optional arguments:
   --no-commit           Do not commit to version control
   --tag                 Create a tag in version control (default: False)
   --no-tag              Do not create a tag in version control
+  --tag-name TAG_NAME   Tag name (only works with --tag) (default:
+                        v{new_version})
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
@@ -475,3 +477,20 @@ def test_read_version_tags_only(tmpdir):
     main(['patch', 'update_from_tag'])
 
     assert '29.6.1' == tmpdir.join("update_from_tag").read()
+
+
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_tag_name(tmpdir, vcs):
+    tmpdir.chdir()
+    subprocess.check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("31.1.1")
+    subprocess.check_call([vcs, "add", "VERSION"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    main(['patch', '--current-version', '31.1.1', '--commit', '--tag', 'VERSION', '--tag-name', 'ReleasedVersion-{new_version}'])
+
+    log = subprocess.check_output([vcs, "log", "-p"])
+
+    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+
+    assert b'ReleasedVersion-31.1.2' in tag_out

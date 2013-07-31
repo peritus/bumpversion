@@ -120,6 +120,18 @@ Options
   "``v``". If you are using git, don't forget to ``git-push`` with the
   ``--tags`` flag.
 
+``--tag-name`` / ``tag_name =``
+  **default:** "``v{new_version}``"
+
+  The name of the tag that will be created. Only valid when using ``--tag`` / ``tag = True``.
+
+  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are ``current_version`` and ``new_version`` as well as all environment variables (prefixed with ``$``).
+
+  Example::
+
+    bumpversion --message 'Jenkins Build {$BUILD_NUMBER}: {new_version}'
+
+
 ``(--commit | --no-commit)`` / ``commit = (True | False)``
   **default:** `Don't create a commit`
 
@@ -152,6 +164,7 @@ Changes
 
 **v0.3.3 (unreleased)**
 
+- add --tag-name option
 - now works on Python 3.2, 3.3 and PyPy
 
 **v0.3.2**
