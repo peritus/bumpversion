@@ -162,7 +162,7 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
-**v0.3.3 (unreleased)**
+**v0.3.3**
 
 - add --tag-name option
 - now works on Python 3.2, 3.3 and PyPy
