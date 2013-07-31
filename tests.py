@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import pytest
 
 import argparse
@@ -13,7 +15,7 @@ from bumpversion import main
 environ['HGENCODING'] = 'UTF-8'
 
 
-EXPECTED_USAGE = u"""
+EXPECTED_USAGE = ("""
 usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
                [--current-version VERSION] [--dry-run] --new-version VERSION
                [--commit | --no-commit] [--tag | --no-tag]
@@ -47,7 +49,7 @@ optional arguments:
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
-""".lstrip()
+""").lstrip()
 
 
 def test_usage_string(tmpdir, capsys):
@@ -58,7 +60,7 @@ def test_usage_string(tmpdir, capsys):
 
     out, err = capsys.readouterr()
     assert err == ""
-    assert out == EXPECTED_USAGE, u"Usage string changed to \n\n\n{}\n\n\n".format(out)
+    assert out == EXPECTED_USAGE, "Usage string changed to \n\n\n{}\n\n\n".format(out)
 
 
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
@@ -237,11 +239,11 @@ def test_commit_and_tag(tmpdir, vcs):
 
     assert '-47.1.1' in log
     assert '+47.1.2' in log
-    assert u'Bump version: 47.1.1 → 47.1.2' in log
+    assert 'Bump version: 47.1.1 → 47.1.2' in log
 
     tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
-    assert 'v47.1.2' not in tag_out
+    assert b'v47.1.2' not in tag_out
 
     main(['patch', '--current-version', '47.1.2', '--commit', '--tag', 'VERSION'])
 
@@ -251,7 +253,7 @@ def test_commit_and_tag(tmpdir, vcs):
 
     tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
-    assert 'v47.1.3' in tag_out
+    assert b'v47.1.3' in tag_out
 
 
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
@@ -273,11 +275,11 @@ def test_commit_and_tag_with_configfile(tmpdir, vcs):
 
     assert '-48.1.1' in log
     assert '+48.1.2' in log
-    assert u'Bump version: 48.1.1 → 48.1.2' in log
+    assert 'Bump version: 48.1.1 → 48.1.2' in log
 
     tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
-    assert 'v48.1.2' not in tag_out
+    assert b'v48.1.2' not in tag_out
 
     main(['patch', '--current-version', '48.1.2', 'VERSION'])
 
@@ -287,7 +289,7 @@ def test_commit_and_tag_with_configfile(tmpdir, vcs):
 
     tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
-    assert 'v48.1.3' in tag_out
+    assert b'v48.1.3' in tag_out
 
 
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])

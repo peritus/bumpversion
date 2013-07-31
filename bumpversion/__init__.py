@@ -1,12 +1,25 @@
 # -*- coding: utf-8 -*-
 
-import ConfigParser
+from __future__ import unicode_literals
+
+try:
+    from ConfigParser import SafeConfigParser, NoOptionError
+except ImportError:
+    from configparser import SafeConfigParser, NoOptionError
+
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
+
+
 import argparse
 import os
 import warnings
 import re
 import sre_constants
 import subprocess
+import io
 from string import Formatter
 
 
@@ -22,12 +35,12 @@ class Git(object):
             line.strip() for line in
             subprocess.check_output(
                 ["git", "status", "--porcelain"]).splitlines()
-            if not line.strip().startswith("??")
+            if not line.strip().startswith(b"??")
         ]
 
         if lines:
             assert False, "Git working directory not clean:\n{}".format(
-                "\n".join(lines))
+                b"\n".join(lines))
 
     @classmethod
     def latest_tag_info(cls):
@@ -45,7 +58,7 @@ class Git(object):
                 "--abbrev=40",
                 "--match=v*",
             ], stderr=subprocess.STDOUT
-            ).split("-")
+            ).decode().split("-")
         except subprocess.CalledProcessError:
             # logging.warn("Error when running git describe")
             return {}
@@ -60,6 +73,7 @@ class Git(object):
         info["distance_to_latest_tag"] = int(describe_out.pop())
         info["current_version"] = describe_out.pop().lstrip("v")
 
+        #assert type(info["current_version"]) == str
         assert 0 == len(describe_out)
 
         return info
@@ -70,7 +84,7 @@ class Git(object):
 
     @classmethod
     def commit(cls, message):
-        subprocess.check_call(["git", "commit", "-m", message])
+        subprocess.check_call(["git", "commit", "-m", message.encode('utf-8')])
 
     @classmethod
     def tag(cls, name):
@@ -93,12 +107,12 @@ class Mercurial(object):
             line.strip() for line in
             subprocess.check_output(
                 ["hg", "status", "-mard"]).splitlines()
-            if not line.strip().startswith("??")
+            if not line.strip().startswith(b"??")
         ]
 
         if lines:
             assert False, "Mercurial working directory not clean:\n{}".format(
-                "\n".join(lines))
+                b"\n".join(lines))
 
     @classmethod
     def add_path(cls, path):
@@ -106,7 +120,7 @@ class Mercurial(object):
 
     @classmethod
     def commit(cls, message):
-        subprocess.check_call(["hg", "commit", "-m", message])
+        subprocess.check_call(["hg", "commit", "-m", message.encode('utf-8')])
 
     @classmethod
     def tag(cls, name):
@@ -116,10 +130,12 @@ VCS = [Git, Mercurial]
 
 
 def prefixed_environ():
-    return dict((("${}".format(key), value) for key, value in os.environ.iteritems()))
+    return dict((("${}".format(key), value) for key, value in os.environ.items()))
 
 
 def attempt_version_bump(args, context):
+    #assert type(args.parse) == str
+
     try:
         regex = re.compile(args.parse)
     except sre_constants.error:
@@ -127,6 +143,7 @@ def attempt_version_bump(args, context):
         return
 
     if args.current_version:
+        #assert type(args.current_version) == str
         match = regex.search(args.current_version)
     else:
         return
@@ -179,15 +196,15 @@ def main(args=None):
 
     config = None
     if os.path.exists(known_args.config_file):
-        config = ConfigParser.SafeConfigParser()
-        config.read([known_args.config_file])
+        config = SafeConfigParser()
+        config.readfp(io.open(known_args.config_file, 'rt'))
         defaults.update(dict(config.items("bumpversion")))
 
         for boolvaluename in ("commit", "tag", "dry_run"):
             try:
                 defaults[boolvaluename] = config.getboolean(
                     "bumpversion", boolvaluename)
-            except ConfigParser.NoOptionError:
+            except NoOptionError:
                 pass  # no default value then ;)
 
     elif known_args.config_file != parser1.get_default('config_file'):
@@ -289,7 +306,7 @@ def main(args=None):
 
     # make sure files exist and contain version string
     for path in args.files:
-        with open(path, 'r') as f:
+        with io.open(path, 'rt') as f:
             before = f.read()
 
         assert args.current_version in before, 'Did not find string {} in file {}'.format(
@@ -297,13 +314,16 @@ def main(args=None):
 
     # change version string in files
     for path in args.files:
-        with open(path, 'r') as f:
+        with io.open(path, 'rt') as f:
             before = f.read()
+
+        #assert type(args.current_version) == bytes
+        #assert type(args.new_version) == bytes
 
         after = before.replace(args.current_version, args.new_version)
 
         if not args.dry_run:
-            with open(path, 'w') as f:
+            with io.open(path, 'wt', encoding='utf-8') as f:
                 f.write(after)
 
     commit_files = args.files
@@ -319,7 +339,12 @@ def main(args=None):
             config.set('bumpversion', 'current_version', args.new_version)
 
         if not args.dry_run:
-            config.write(open(known_args.config_file, 'wb'))
+            s = StringIO()
+            config.write(s)
+
+            with io.open(known_args.config_file, 'wb') as f:
+                f.write(s.getvalue().encode())
+
             commit_files.append(known_args.config_file)
 
     if args.commit:

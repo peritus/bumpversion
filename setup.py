@@ -9,7 +9,7 @@ setup(
     license='',
     packages=['bumpversion'],
     description='Version-bump your software with a single command',
-    long_description=open('README.rst', 'r').read(),
+    long_description=str(open('README.rst', 'rb').read()),
     entry_points={
         'console_scripts': [
         'bumpversion = bumpversion:main',
