@@ -281,11 +281,11 @@ def main(args=None):
 
     parser3.add_argument('--tag-name', metavar='TAG_NAME',
                          help='Tag name (only works with --tag)',
-                         default='v{new_version}')
+                         default=defaults.get('tag_name', 'v{new_version}'))
 
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
                          help='Commit message',
-                         default='Bump version: {current_version} → {new_version}')
+                         default=defaults.get('message', 'Bump version: {current_version} → {new_version}'))
 
     files = []
     if 'files' in defaults:

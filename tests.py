@@ -489,8 +489,33 @@ def test_tag_name(tmpdir, vcs):
 
     main(['patch', '--current-version', '31.1.1', '--commit', '--tag', 'VERSION', '--tag-name', 'ReleasedVersion-{new_version}'])
 
-    log = subprocess.check_output([vcs, "log", "-p"])
-
     tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'ReleasedVersion-31.1.2' in tag_out
+
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_message_from_config_file(tmpdir, capsys, vcs):
+    tmpdir.chdir()
+    subprocess.check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("400.0.0")
+    subprocess.check_call([vcs, "add", "VERSION"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+current_version: 400.0.0
+new_version: 401.0.0
+commit: True
+tag: True
+message: {current_version} was old, {new_version} is new
+tag_name: from-{current_version}-to-{new_version}""")
+
+    main(['major', 'VERSION'])
+
+    log = subprocess.check_output([vcs, "log", "-p"])
+
+    assert b'400.0.0 was old, 401.0.0 is new' in log
+
+    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+
+    assert b'from-400.0.0-to-401.0.0' in tag_out
+
