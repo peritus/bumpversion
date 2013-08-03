@@ -162,6 +162,10 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.3.4**
+
+- bugfix: tag_name and message in .bumpversion.cfg didn't have an effect (`#9 <https://github.com/peritus/bumpversion/issues/9>`_)
+
 **v0.3.3**
 
 - add --tag-name option
