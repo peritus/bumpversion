@@ -73,7 +73,7 @@ class Git(object):
         info["distance_to_latest_tag"] = int(describe_out.pop())
         info["current_version"] = describe_out.pop().lstrip("v")
 
-        #assert type(info["current_version"]) == str
+        # assert type(info["current_version"]) == str
         assert 0 == len(describe_out)
 
         return info
@@ -134,7 +134,7 @@ def prefixed_environ():
 
 
 def attempt_version_bump(args, context):
-    #assert type(args.parse) == str
+    # assert type(args.parse) == str
 
     try:
         regex = re.compile(args.parse)
@@ -143,7 +143,7 @@ def attempt_version_bump(args, context):
         return
 
     if args.current_version:
-        #assert type(args.current_version) == str
+        # assert type(args.current_version) == str
         match = regex.search(args.current_version)
     else:
         return
@@ -321,8 +321,8 @@ def main(args=None):
         with io.open(path, 'rt') as f:
             before = f.read()
 
-        #assert type(args.current_version) == bytes
-        #assert type(args.new_version) == bytes
+        # assert type(args.current_version) == bytes
+        # assert type(args.new_version) == bytes
 
         after = before.replace(args.current_version, args.new_version)
 
@@ -366,4 +366,3 @@ def main(args=None):
 
             if args.tag:
                 vcs.tag(args.tag_name.format(**formatargs))
-

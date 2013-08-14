@@ -493,6 +493,7 @@ def test_tag_name(tmpdir, vcs):
 
     assert b'ReleasedVersion-31.1.2' in tag_out
 
+
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_message_from_config_file(tmpdir, capsys, vcs):
     tmpdir.chdir()
@@ -518,4 +519,3 @@ tag_name: from-{current_version}-to-{new_version}""")
     tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'from-400.0.0-to-401.0.0' in tag_out
-
