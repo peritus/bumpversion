@@ -12,7 +12,7 @@ setup(
     long_description=str(open('README.rst', 'rb').read()),
     entry_points={
         'console_scripts': [
-        'bumpversion = bumpversion:main',
+            'bumpversion = bumpversion:main',
         ]
     },
     classifiers=(
