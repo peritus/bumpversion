@@ -132,6 +132,7 @@ VCS = [Git, Mercurial]
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.items()))
 
+first_numeric = re.compile('([^\d]*)(\d+)(.*)')
 
 def attempt_version_bump(args, context):
     # assert type(args.parse) == str
@@ -159,7 +160,9 @@ def attempt_version_bump(args, context):
     bumped = False
     for label in order:
         if label == args.part:
-            parsed[args.part] = int(parsed[args.part]) + 1
+            part_prefix, numeric_version, part_suffix = first_numeric.search(parsed[args.part]).groups()
+            bumped_numeric = str(int(numeric_version) + 1)
+            parsed[args.part] = "".join([part_prefix, bumped_numeric, part_suffix])
             bumped = True
         elif bumped:
             parsed[label] = 0
