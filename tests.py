@@ -217,6 +217,21 @@ def test_bumpversion_custom_parse_semver(tmpdir):
 
     assert 'XXX1.1.7-master+allan2' == tmpdir.join("file15").read()
 
+def test_bumpversion_serialize_only_parts(tmpdir):
+    tmpdir.join("file51").write("XXX1.1.8-master+allan1")
+    tmpdir.chdir()
+    main([
+         '--current-version', '1.1.8-master+allan1',
+         '--parse', '(?P<major>\d+).(?P<minor>\d+).(?P<patch>\d+)(-(?P<prerel>[^\+]+))?(\+(?P<meta>.*))?',
+         '--serialize', 'v{major}.{minor}',
+         'meta',
+         'file51'
+         ])
+
+    assert 'XXXv1.1' == tmpdir.join("file51").read()
+
+
+
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_dirty_workdir(tmpdir, vcs):
     tmpdir.chdir()
