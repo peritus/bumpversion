@@ -134,48 +134,81 @@ def prefixed_environ():
 
 first_numeric = re.compile('([^\d]*)(\d+)(.*)')
 
-def attempt_version_bump(args, context):
-    # assert type(args.parse) == str
+class VersionPart(object):
 
-    try:
-        regex = re.compile(args.parse)
-    except sre_constants.error:
-        warnings.warn("--patch '{}' is not a valid regex".format(args.parse))
-        return
+    def __init__(self, value):
+        self.value = value
 
-    if args.current_version:
-        # assert type(args.current_version) == str
-        match = regex.search(args.current_version)
-    else:
-        return
+    def bump(self):
+        part_prefix, numeric_version, part_suffix = first_numeric.search(self.value).groups()
+        bumped_numeric = str(int(numeric_version) + 1)
+        self.value = "".join([part_prefix, bumped_numeric, part_suffix])
 
-    if not match:
-        warnings.warn("'{}' does not parse current version".format(args.parse))
-        return
+    def __format__(self, format_spec):
+        return self.value
 
-    parsed = match.groupdict()
+    def zero(self):
+        self.value = "0"
 
-    order = (label for _, label, _, _ in Formatter().parse(args.serialize))
+class Version(object):
+    """
+    Holds a complete representation of a version string
+    """
 
-    bumped = False
-    for label in order:
-        if label == args.part:
-            part_prefix, numeric_version, part_suffix = first_numeric.search(parsed[args.part]).groups()
-            bumped_numeric = str(int(numeric_version) + 1)
-            parsed[args.part] = "".join([part_prefix, bumped_numeric, part_suffix])
-            bumped = True
-        elif bumped:
-            parsed[label] = 0
+    def __init__(self, parse_regex, serialize_format, context=None):
 
-    parsed.update(context)
+        try:
+            self.parse_regex = re.compile(parse_regex)
+        except:
+            warnings.warn("--patch '{}' is not a valid regex".format(parse_regex))
 
-    try:
-        return args.serialize.format(**parsed)
-    except KeyError as e:
-        warnings.warn("Did not find key {} in {} when serializing version number".format(
-            repr(e.message), repr(parsed)))
-        return
+        self.serialize_format = serialize_format
 
+
+        if not context:
+            context = {}
+
+        self.context = context
+
+    def order(self):
+        return (label for _, label, _, _ in Formatter().parse(self.serialize_format))
+
+    def register_part(self, part):
+        pass
+
+    def parse(self, version_string):
+        match = self.parse_regex.search(version_string)
+
+        self._parsed = {}
+        if not match:
+            warnings.warn("'{}' does not parse current version".format(self.parse_regex.pattern))
+            return
+
+        for key, value in match.groupdict().items():
+            self._parsed[key] = VersionPart(value)
+
+    def serialize(self):
+        values = self.context.copy()
+        values.update(self._parsed)
+        try:
+            return self.serialize_format.format(**values)
+        except KeyError as e:
+            assert hasattr(e, 'message'), dir(e)
+            warnings.warn("Did not find key {} in {} when serializing version number".format(
+                repr(e.message), repr(self._parsed)))
+            return
+
+    def bump(self, part_name):
+        bumped = False
+
+        for label in self.order():
+            if not label in self._parsed:
+                continue
+            elif label == part_name:
+                self._parsed[part_name].bump()
+                bumped = True
+            elif bumped:
+                self._parsed[label].zero()
 
 def main(args=None):
 
@@ -242,13 +275,16 @@ def main(args=None):
 
     defaults.update(vars(known_args))
 
-    attempted_new_version = attempt_version_bump(
-        known_args,
-        context=dict(list(prefixed_environ().items()) + list(vcs_info.items()))
+    v = Version(
+      known_args.parse,
+      known_args.serialize,
+      context=dict(list(prefixed_environ().items()) + list(vcs_info.items()))
     )
 
-    if not ('new_version' in defaults) and attempted_new_version != None:
-        defaults['new_version'] = attempted_new_version
+    if not 'new_version' in defaults and known_args.current_version:
+        v.parse(known_args.current_version)
+        v.bump(known_args.part)
+        defaults['new_version'] = v.serialize()
 
     parser3 = argparse.ArgumentParser(
         description='Bumps version strings',
