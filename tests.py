@@ -118,6 +118,12 @@ def test_simple_replacement(tmpdir):
     main(shlex_split("patch --current-version 1.2.0 --new-version 1.2.1 VERSION"))
     assert "1.2.1" == tmpdir.join("VERSION").read()
 
+def test_simple_replacement_in_utf8_file(tmpdir):
+    tmpdir.join("VERSION").write("Kröt1.3.0".encode('utf-8'), 'wb')
+    tmpdir.chdir()
+    main(shlex_split("patch --current-version 1.3.0 --new-version 1.3.1 VERSION"))
+    out = tmpdir.join("VERSION").read('rb')
+    assert "'Kr\\xc3\\xb6t1.3.1'" in repr(out)
 
 def test_config_file(tmpdir):
     tmpdir.join("file1").write("0.9.34")

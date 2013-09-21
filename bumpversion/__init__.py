@@ -360,16 +360,16 @@ def main(args=None):
 
     # make sure files exist and contain version string
     for path in args.files:
-        with io.open(path, 'rt') as f:
-            before = f.read()
+        with io.open(path, 'rb') as f:
+            before = f.read().decode('utf-8')
 
         assert args.current_version in before, 'Did not find string {} in file {}'.format(
             args.current_version, path)
 
     # change version string in files
     for path in args.files:
-        with io.open(path, 'rt') as f:
-            before = f.read()
+        with io.open(path, 'rb') as f:
+            before = f.read().decode('utf-8')
 
         # assert type(args.current_version) == bytes
         # assert type(args.new_version) == bytes
