@@ -137,15 +137,16 @@ VCS = [Git, Mercurial]
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.items()))
 
-first_numeric = re.compile('([^\d]*)(\d+)(.*)')
 
 class VersionPart(object):
+
+    FIRST_NUMERIC = re.compile('([^\d]*)(\d+)(.*)')
 
     def __init__(self, value):
         self.value = value
 
     def bump(self):
-        part_prefix, numeric_version, part_suffix = first_numeric.search(self.value).groups()
+        part_prefix, numeric_version, part_suffix = self.FIRST_NUMERIC.search(self.value).groups()
         bumped_numeric = str(int(numeric_version) + 1)
         self.value = "".join([part_prefix, bumped_numeric, part_suffix])
 
