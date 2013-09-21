@@ -22,6 +22,11 @@ import subprocess
 import io
 from string import Formatter
 
+import sys
+import codecs
+sys.stdout = codecs.getwriter('utf8')(sys.stdout)
+
+
 
 class Git(object):
 
