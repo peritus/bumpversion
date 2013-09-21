@@ -26,7 +26,12 @@ import sys
 import codecs
 sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
+__VERSION__ = '0.3.4'
 
+DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
+  __VERSION__,
+  sys.version.split("\n")[0].split(" ")[0],
+)
 
 class Git(object):
 
@@ -266,7 +271,7 @@ def main(args=None):
                          default='{major}.{minor}.{patch}')
 
     parser2_2 = argparse.ArgumentParser(
-        description='Bumps version strings',
+        description=DESCRIPTION,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         conflict_handler='resolve',
         add_help=False,
@@ -293,7 +298,7 @@ def main(args=None):
         defaults['new_version'] = v.serialize()
 
     parser3 = argparse.ArgumentParser(
-        description='Bumps version strings',
+        description=DESCRIPTION,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         conflict_handler='resolve',
         parents=[parser2],

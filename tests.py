@@ -10,7 +10,7 @@ from os import curdir, makedirs, chdir, environ
 from os.path import join, curdir, dirname
 from shlex import split as shlex_split
 
-from bumpversion import main
+from bumpversion import main, DESCRIPTION
 
 environ['HGENCODING'] = 'UTF-8'
 
@@ -22,7 +22,7 @@ usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
                [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part file [file ...]
 
-Bumps version strings
+%s
 
 positional arguments:
   part                  Part of the version to be bumped.
@@ -51,7 +51,7 @@ optional arguments:
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
-""").lstrip()
+""" % DESCRIPTION).lstrip()
 
 
 def test_usage_string(tmpdir, capsys):
