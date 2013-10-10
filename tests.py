@@ -408,28 +408,28 @@ def test_current_version_from_tag(tmpdir):
     assert '26.6.1' == tmpdir.join("update_from_tag").read()
 
 
-def test_current_version_from_tag_not_written_to_config_file(tmpdir):
+def test_current_version_from_tag_written_to_config_file(tmpdir):
     # prepare
-    tmpdir.join("updated_but_not_config_file").write("14.6.0")
+    tmpdir.join("updated_also_in_config_file").write("14.6.0")
     tmpdir.chdir()
 
     tmpdir.join(".bumpversion.cfg").write("""[bumpversion]""")
 
     subprocess.check_call(["git", "init"])
-    subprocess.check_call(["git", "add", "updated_but_not_config_file"])
+    subprocess.check_call(["git", "add", "updated_also_in_config_file"])
     subprocess.check_call(["git", "commit", "-m", "initial"])
     subprocess.check_call(["git", "tag", "v14.6.0"])
 
     # don't give current-version, that should come from tag
     main([
         'patch',
-        'updated_but_not_config_file',
+        'updated_also_in_config_file',
          '--commit',
          '--tag',
          ])
 
-    assert '14.6.1' == tmpdir.join("updated_but_not_config_file").read()
-    assert '14.6.1' not in tmpdir.join(".bumpversion.cfg").read()
+    assert '14.6.1' == tmpdir.join("updated_also_in_config_file").read()
+    assert '14.6.1' in tmpdir.join(".bumpversion.cfg").read()
 
 
 def test_distance_to_latest_tag_as_part_of_new_version(tmpdir):

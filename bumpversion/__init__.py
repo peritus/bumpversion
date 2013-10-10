@@ -385,12 +385,7 @@ def main(args=None):
     if config:
         config.remove_option('bumpversion', 'new_version')
 
-        if args.commit and args.tag and 'current_version' in vcs_info:
-            # we don't need to write it to the config file, because it's
-            # committed and tagged
-            config.remove_option('bumpversion', 'current_version')
-        else:
-            config.set('bumpversion', 'current_version', args.new_version)
+        config.set('bumpversion', 'current_version', args.new_version)
 
         if not args.dry_run:
             s = StringIO()
