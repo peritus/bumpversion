@@ -29,9 +29,10 @@ sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 __VERSION__ = '0.3.4'
 
 DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
-  __VERSION__,
-  sys.version.split("\n")[0].split(" ")[0],
+    __VERSION__,
+    sys.version.split("\n")[0].split(" ")[0],
 )
+
 
 class Git(object):
 
@@ -161,7 +162,9 @@ class VersionPart(object):
     def zero(self):
         self.value = "0"
 
+
 class Version(object):
+
     """
     Holds a complete representation of a version string
     """
@@ -174,7 +177,6 @@ class Version(object):
             warnings.warn("--patch '{}' is not a valid regex".format(parse_regex))
 
         self.serialize_format = serialize_format
-
 
         if not context:
             context = {}
@@ -220,6 +222,7 @@ class Version(object):
                 bumped = True
             elif bumped:
                 self._parsed[label].zero()
+
 
 def main(args=None):
 
@@ -287,9 +290,9 @@ def main(args=None):
     defaults.update(vars(known_args))
 
     v = Version(
-      known_args.parse,
-      known_args.serialize,
-      context=dict(list(prefixed_environ().items()) + list(vcs_info.items()))
+        known_args.parse,
+        known_args.serialize,
+        context=dict(list(prefixed_environ().items()) + list(vcs_info.items()))
     )
 
     if not 'new_version' in defaults and known_args.current_version:
