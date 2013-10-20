@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import pytest
+import sys
 
 import argparse
 import subprocess
@@ -556,6 +557,14 @@ tag_name: from-{current_version}-to-{new_version}""")
 
     assert b'from-400.0.0-to-401.0.0' in tag_out
 
+config_parser_handles_utf8 = True
+try:
+    import configparser
+except ImportError:
+    config_parser_handles_utf8 = False
+
+@pytest.mark.xfail(not config_parser_handles_utf8,
+                   reason="old ConfigParser uses non-utf-8-strings internally")
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_utf8_message_from_config_file(tmpdir, capsys, vcs):
     tmpdir.chdir()
