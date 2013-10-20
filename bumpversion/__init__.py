@@ -3,9 +3,9 @@
 from __future__ import unicode_literals
 
 try:
-    from ConfigParser import SafeConfigParser, NoOptionError
-except ImportError:
     from configparser import SafeConfigParser, NoOptionError
+except ImportError:
+    from ConfigParser import SafeConfigParser, NoOptionError
 
 try:
     from StringIO import StringIO
