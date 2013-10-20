@@ -555,3 +555,25 @@ tag_name: from-{current_version}-to-{new_version}""")
     tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'from-400.0.0-to-401.0.0' in tag_out
+
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_utf8_message_from_config_file(tmpdir, capsys, vcs):
+    tmpdir.chdir()
+    subprocess.check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("500.0.0")
+    subprocess.check_call([vcs, "add", "VERSION"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    initial_config = """[bumpversion]
+current_version = 500.0.0
+commit = True
+message = Nová verze: {current_version} ☃, {new_version} ☀
+
+"""
+
+    tmpdir.join(".bumpversion.cfg").write(initial_config.encode('utf-8'), mode='wb')
+    main(['major', 'VERSION'])
+    log = subprocess.check_output([vcs, "log", "-p"])
+    expected_new_config = initial_config.replace('500', '501')
+    assert expected_new_config.encode('utf-8') == tmpdir.join(".bumpversion.cfg").read(mode='rb')
+

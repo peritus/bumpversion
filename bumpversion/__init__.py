@@ -247,7 +247,8 @@ def main(args=None):
     config = None
     if os.path.exists(known_args.config_file):
         config = SafeConfigParser()
-        config.readfp(io.open(known_args.config_file, 'rt'))
+        config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
+
         defaults.update(dict(config.items("bumpversion")))
 
         for boolvaluename in ("commit", "tag", "dry_run"):
@@ -395,7 +396,7 @@ def main(args=None):
             config.write(s)
 
             with io.open(known_args.config_file, 'wb') as f:
-                f.write(s.getvalue().encode())
+                f.write(s.getvalue().encode('utf-8'))
 
             commit_files.append(known_args.config_file)
 
