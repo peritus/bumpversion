@@ -393,10 +393,16 @@ def main(args=None):
 
         if not args.dry_run:
             s = StringIO()
-            config.write(s)
 
-            with io.open(known_args.config_file, 'wb') as f:
-                f.write(s.getvalue().encode('utf-8'))
+            try:
+                config.write(s)
+                with io.open(known_args.config_file, 'wb') as f:
+                    f.write(s.getvalue().encode('utf-8'))
+            except UnicodeEncodeError:
+                warnings.warn(
+                    "Unable to write UTF-8 to config file, because of an old configparser version. "
+                    "Update with `pip install --upgrade configparser`."
+                )
 
             commit_files.append(known_args.config_file)
 
