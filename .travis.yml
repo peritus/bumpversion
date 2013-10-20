@@ -10,7 +10,7 @@ install:
   - git config --global user.email "bumpversion-test-git@travis.ci"
   - git config --global user.name "Testing Git on Travis CI"
   - echo -e '[ui]\nusername = Testing Mercurial on Travis CI <bumpversion-test-hg@travis.ci>' > ~/.hgrc
-  - pip install --upgrade pytest
+  - pip install --upgrade pytest tox
 
-script: py.test
+script: tox
 
