@@ -21,6 +21,7 @@ import sre_constants
 import subprocess
 import io
 from string import Formatter
+from datetime import datetime
 
 import sys
 import codecs
@@ -246,7 +247,7 @@ def main(args=None):
 
     config = None
     if os.path.exists(known_args.config_file):
-        config = SafeConfigParser()
+        config = RawConfigParser()
         config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
 
         defaults.update(dict(config.items("bumpversion")))
@@ -290,10 +291,15 @@ def main(args=None):
 
     defaults.update(vars(known_args))
 
+    time_context = {
+        'now': datetime.now(),
+        'utcnow': datetime.utcnow(),
+    }
+
     v = Version(
         known_args.parse,
         known_args.serialize,
-        context=dict(list(prefixed_environ().items()) + list(vcs_info.items()))
+        context=dict(list(time_context.items()) + list(prefixed_environ().items()) + list(vcs_info.items()))
     )
 
     if not 'new_version' in defaults and known_args.current_version:
@@ -411,13 +417,14 @@ def main(args=None):
             for path in commit_files:
                 vcs.add_path(path)
 
-            formatargs = {
+            vcs_context = {
                 "current_version": args.current_version,
                 "new_version": args.new_version,
             }
-            formatargs.update(prefixed_environ())
+            vcs_context.update(time_context)
+            vcs_context.update(prefixed_environ())
 
-            vcs.commit(message=args.message.format(**formatargs))
+            vcs.commit(message=args.message.format(**vcs_context))
 
             if args.tag:
-                vcs.tag(args.tag_name.format(**formatargs))
+                vcs.tag(args.tag_name.format(**vcs_context))

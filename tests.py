@@ -586,3 +586,28 @@ message = Nová verze: {current_version} ☃, {new_version} ☀
     expected_new_config = initial_config.replace('500', '501')
     assert expected_new_config.encode('utf-8') == tmpdir.join(".bumpversion.cfg").read(mode='rb')
 
+@pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
+def test_utf8_message_from_config_file(tmpdir, capsys, vcs):
+    tmpdir.chdir()
+    subprocess.check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("10.10.0")
+    subprocess.check_call([vcs, "add", "VERSION"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    initial_config = """[bumpversion]
+current_version = 10.10.0
+commit = True
+message = [{now}] [{utcnow} {utcnow:%YXX%mYY%d}]
+
+"""
+    tmpdir.join(".bumpversion.cfg").write(initial_config)
+
+    main(['major', 'VERSION'])
+
+    log = subprocess.check_output([vcs, "log", "-p"])
+
+    assert b'[20' in log
+    assert b'] [' in log
+    assert b'XX' in log
+    assert b'YY' in log
+

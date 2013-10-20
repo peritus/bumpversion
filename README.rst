@@ -125,7 +125,8 @@ Options
 
   The name of the tag that will be created. Only valid when using ``--tag`` / ``tag = True``.
 
-  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are ``current_version`` and ``new_version`` as well as all environment variables (prefixed with ``$``).
+  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are ``current_version`` and ``new_version`` as well as all environment variables (prefixed with ``$``). You can also use the variables ``now`` or ``utcnow`` to get a current timestamp. Both accept datetime formatting (when used like as in ``{now:%d.%m.%Y}``).
+
 
   Example::
 
@@ -142,11 +143,11 @@ Options
 
   The commit message to use when creating a commit. Only valid when using ``--commit`` / ``commit = True``.
 
-  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are ``current_version`` and ``new_version`` as well as all environment variables (prefixed with ``$``).
+  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are ``current_version`` and ``new_version`` as well as all environment variables (prefixed with ``$``). You can also use the variables ``now`` or ``utcnow`` to get a current timestamp. Both accept datetime formatting (when used like as in ``{now:%d.%m.%Y}``).
 
   Example::
 
-    bumpversion --message 'Jenkins Build {$BUILD_NUMBER}: {new_version}'
+    bumpversion --message '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}'
 
 ``-dry-run, -n``
   Don't touch any files, just pretend
