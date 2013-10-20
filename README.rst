@@ -163,6 +163,18 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.3.5**
+
+- add {now} and {utcnow} to context
+- use correct file encoding writing to config file. NOTE: If you are using
+  Python2 and want to use UTF-8 encoded characters in your config file, you
+  need to update ConfigParser like using 'pip install -U configparser'
+- leave current_version in config even if available from vcs tags (was
+  confusing)
+- print own version number in usage
+- allow bumping parts that contain non-numerics
+- various fixes regarding file encoding
+
 **v0.3.4**
 
 - bugfix: tag_name and message in .bumpversion.cfg didn't have an effect (`#9 <https://github.com/peritus/bumpversion/issues/9>`_)
