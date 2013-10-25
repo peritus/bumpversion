@@ -229,11 +229,15 @@ def main(args=None):
 
     parser1 = argparse.ArgumentParser(add_help=False)
 
+    parser1.add_argument('--verbose', '-v', action='store_true', default=False,
+                         help='Show versions')
+
     parser1.add_argument(
         '--config-file', default='.bumpversion.cfg', metavar='FILE',
         help='Config file to read most of the variables from', required=False)
 
     known_args, remaining_argv = parser1.parse_known_args(args)
+    verbose = known_args.verbose
 
     defaults = {}
     vcs_info = {}
@@ -375,6 +379,9 @@ def main(args=None):
 
         assert args.current_version in before, 'Did not find string {} in file {}'.format(
             args.current_version, path)
+
+    if verbose:
+        print args.current_version, '->', args.new_version
 
     # change version string in files
     for path in args.files:
