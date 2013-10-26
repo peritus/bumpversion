@@ -149,8 +149,11 @@ Options
 
     bumpversion --message '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}'
 
-``-dry-run, -n``
+``--dry-run, -n``
   Don't touch any files, just pretend
+
+``--verbose, -v``
+  Print out current and new version strings
 
 ``-h, --help``
   Print help and exit

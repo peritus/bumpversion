@@ -17,10 +17,10 @@ environ['HGENCODING'] = 'UTF-8'
 
 
 EXPECTED_USAGE = ("""
-usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
-               [--current-version VERSION] [--dry-run] --new-version VERSION
-               [--commit | --no-commit] [--tag | --no-tag]
-               [--tag-name TAG_NAME] [--message COMMIT_MSG]
+usage: py.test [-h] [--verbose] [--config-file FILE] [--parse REGEX]
+               [--serialize FORMAT] [--current-version VERSION] [--dry-run]
+               --new-version VERSION [--commit | --no-commit]
+               [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part file [file ...]
 
 %s
@@ -31,6 +31,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --verbose, -v         Show versions (default: False)
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
   --parse REGEX         Regex parsing the version string (default:
@@ -82,7 +83,7 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     assert err == ""
 
     if vcs == "git":
-        assert "usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]" in out
+        assert "usage: py.test [-h] [--verbose] [--config-file FILE] [--parse REGEX]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
         assert "[--new-version VERSION]" in out
     else:
