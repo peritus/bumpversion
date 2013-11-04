@@ -92,7 +92,7 @@ class Git(object):
 
     @classmethod
     def add_path(cls, path):
-        subprocess.check_call(["git", "add", path])
+        subprocess.check_call(["git", "add", "--update", path])
 
     @classmethod
     def commit(cls, message):
