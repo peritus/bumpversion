@@ -563,6 +563,7 @@ try:
 except ImportError:
     config_parser_handles_utf8 = False
 
+
 @pytest.mark.xfail(not config_parser_handles_utf8,
                    reason="old ConfigParser uses non-utf-8-strings internally")
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
@@ -585,6 +586,7 @@ message = Nová verze: {current_version} ☃, {new_version} ☀
     log = subprocess.check_output([vcs, "log", "-p"])
     expected_new_config = initial_config.replace('500', '501')
     assert expected_new_config.encode('utf-8') == tmpdir.join(".bumpversion.cfg").read(mode='rb')
+
 
 @pytest.mark.parametrize(("vcs"), [("git"), ("hg")])
 def test_utf8_message_from_config_file(tmpdir, capsys, vcs):
@@ -610,4 +612,3 @@ message = [{now}] [{utcnow} {utcnow:%YXX%mYY%d}]
     assert b'] [' in log
     assert b'XX' in log
     assert b'YY' in log
-
