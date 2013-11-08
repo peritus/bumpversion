@@ -163,6 +163,10 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.3.6**
+
+- Fix --tag default (thanks @keimlink)
+
 **v0.3.5**
 
 - add {now} and {utcnow} to context
