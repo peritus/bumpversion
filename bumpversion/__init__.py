@@ -334,7 +334,7 @@ def main(args=None):
 
     taggroup = parser3.add_mutually_exclusive_group()
 
-    taggroup.add_argument('--tag', action='store_true', dest="tag", default=defaults.get("commit", False),
+    taggroup.add_argument('--tag', action='store_true', dest="tag", default=defaults.get("tag", False),
                           help='Create a tag in version control')
     taggroup.add_argument('--no-tag', action='store_false', dest="tag",
                           help='Do not create a tag in version control', default=argparse.SUPPRESS)
