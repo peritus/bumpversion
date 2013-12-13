@@ -34,7 +34,7 @@ Usage
 
 ::
 
-    bumpversion [options] part file [file ...]
+    bumpversion [options] part [file [file ...]]
 
 Config file .bumpversion.cfg
 ++++++++++++++++++++++++++++
@@ -67,14 +67,14 @@ Options
 
      bumpversion --current-version 1.1.9 major setup.py
 
-``file [file ...]`` / ``files =``
-  **no default value**
+``[file [file ...]]`` / ``files =``
+  **default: empty**
 
   The files where to search and replace version strings
 
   Command line example::
 
-     bumpversion setup.py src/VERSION.txt
+     bumpversion patch setup.py src/VERSION.txt
 
   Config file example::
 
@@ -88,7 +88,7 @@ Options
 
   Example::
 
-     bumpversion --current-version 0.5.1 setup.py
+     bumpversion --current-version 0.5.1 patch setup.py
 
 ``--new-version`` / ``new_version =``
   **no default value**
@@ -97,7 +97,7 @@ Options
 
   Example (`Go from 0.5.1 directly to 0.6.1`)::
 
-      bumpversion --current-version 0.5.1 --new-version 0.6.1 setup.py
+      bumpversion --current-version 0.5.1 --new-version 0.6.1 patch setup.py
 
 ``--parse`` / ``parse =``
   **default:** "``(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)``"
@@ -130,7 +130,7 @@ Options
 
   Example::
 
-    bumpversion --message 'Jenkins Build {$BUILD_NUMBER}: {new_version}'
+    bumpversion --message 'Jenkins Build {$BUILD_NUMBER}: {new_version}' patch
 
 
 ``(--commit | --no-commit)`` / ``commit = (True | False)``
@@ -147,7 +147,7 @@ Options
 
   Example::
 
-    bumpversion --message '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}'
+    bumpversion --message '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}' patch
 
 ``-dry-run, -n``
   Don't touch any files, just pretend
