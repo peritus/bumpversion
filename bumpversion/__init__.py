@@ -77,7 +77,7 @@ class Git(object):
 
         info = {}
 
-        if describe_out[-1] is "dirty":
+        if describe_out[-1].strip() == "dirty":
             info["dirty"] = True
             describe_out.pop()
 
