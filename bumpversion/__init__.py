@@ -224,8 +224,43 @@ class Version(object):
             elif bumped:
                 self._parsed[label].zero()
 
+OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
+    '--config-file',
+    '--current-version',
+    '--message',
+    '--new-version',
+    '--parse',
+    '--serialize',
+    '--tag-name',
+]
 
-def main(args=None):
+
+def split_args_in_optional_and_positional(args):
+    # manually parsing positional arguments because stupid argparse can't mix
+    # positional and optional arguments
+
+    positions = []
+    for i, arg in enumerate(args):
+
+        previous = None
+
+        if i > 0:
+            previous = args[i-1]
+
+        if ((not arg.startswith('--'))  and
+            (previous not in OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES)):
+            positions.append(i)
+
+    positionals = [arg for i, arg in enumerate(args) if i in positions]
+    args = [arg for i, arg in enumerate(args) if i not in positions]
+
+    return (positionals, args)
+
+def main(original_args=None):
+
+    positionals, args = split_args_in_optional_and_positional(original_args)
+
+
 
     parser1 = argparse.ArgumentParser(add_help=False)
 
@@ -275,19 +310,7 @@ def main(args=None):
                          help='How to format what is parsed back to a version',
                          default='{major}.{minor}.{patch}')
 
-    parser2_2 = argparse.ArgumentParser(
-        description=DESCRIPTION,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        conflict_handler='resolve',
-        add_help=False,
-        parents=[parser2],
-    )
-    parser2_2.add_argument('part', help='Part of the version to be bumped.', nargs='?')
-
-    known_args, remaining_argv = parser2_2.parse_known_args(remaining_argv)
-
-    if known_args.part:
-        remaining_argv[0:0] = [known_args.part]
+    known_args, remaining_argv = parser2.parse_known_args(args)
 
     defaults.update(vars(known_args))
 
@@ -304,7 +327,10 @@ def main(args=None):
 
     if not 'new_version' in defaults and known_args.current_version:
         v.parse(known_args.current_version)
-        v.bump(known_args.part)
+
+        if len(positionals) > 0:
+            v.bump(positionals[0])
+
         defaults['new_version'] = v.serialize()
 
     parser3 = argparse.ArgumentParser(
@@ -355,13 +381,12 @@ def main(args=None):
     parser3.add_argument('part',
                          help='Part of the version to be bumped.')
     parser3.add_argument('files', metavar='file',
-                         nargs='+' if len(files) == 0 else '*',
+                         nargs='*',
                          help='Files to change', default=files)
 
-    args = parser3.parse_args(remaining_argv)
+    args = parser3.parse_args(remaining_argv + positionals)
 
-    if len(args.files) is 0:
-        warnings.warn("No files specified")
+    files = files or positionals[1:]
 
     for vcs in VCS:
         if vcs.is_usable():
@@ -369,7 +394,7 @@ def main(args=None):
             break
 
     # make sure files exist and contain version string
-    for path in args.files:
+    for path in files:
         with io.open(path, 'rb') as f:
             before = f.read().decode('utf-8')
 
@@ -377,7 +402,7 @@ def main(args=None):
             args.current_version, path)
 
     # change version string in files
-    for path in args.files:
+    for path in files:
         with io.open(path, 'rb') as f:
             before = f.read().decode('utf-8')
 
@@ -390,7 +415,7 @@ def main(args=None):
             with io.open(path, 'wt', encoding='utf-8') as f:
                 f.write(after)
 
-    commit_files = args.files
+    commit_files = files
 
     if config:
         config.remove_option('bumpversion', 'new_version')

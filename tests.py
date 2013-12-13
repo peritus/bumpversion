@@ -21,13 +21,13 @@ usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
                [--current-version VERSION] [--dry-run] --new-version VERSION
                [--commit | --no-commit] [--tag | --no-tag]
                [--tag-name TAG_NAME] [--message COMMIT_MSG]
-               part file [file ...]
+               part [file [file ...]]
 
 %s
 
 positional arguments:
   part                  Part of the version to be bumped.
-  file                  Files to change
+  file                  Files to change (default: [])
 
 optional arguments:
   -h, --help            show this help message and exit
