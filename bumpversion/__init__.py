@@ -39,7 +39,14 @@ class Git(object):
 
     @classmethod
     def is_usable(cls):
-        return os.path.isdir(".git")
+        """
+        This method tries to determine if the current directory is inside a git
+        working tree.
+        """
+        is_on_tree = subprocess.check_output(["git",
+                                              "rev-parse",
+                                              "--is-inside-work-tree"])
+        return os.path.isdir(".git") or is_on_tree == "true"
 
     @classmethod
     def assert_nondirty(cls):
@@ -241,7 +248,6 @@ def split_args_in_optional_and_positional(args):
 
     positions = []
     for i, arg in enumerate(args):
-
         previous = None
 
         if i > 0:
@@ -256,12 +262,9 @@ def split_args_in_optional_and_positional(args):
 
     return (positionals, args)
 
+
 def main(original_args=None):
-
     positionals, args = split_args_in_optional_and_positional(original_args)
-
-
-
     parser1 = argparse.ArgumentParser(add_help=False)
 
     parser1.add_argument(
