@@ -43,10 +43,14 @@ class Git(object):
         This method tries to determine if the current directory is inside a git
         working tree.
         """
-        is_on_tree = subprocess.check_output(["git",
-                                              "rev-parse",
-                                              "--is-inside-work-tree"])
-        return os.path.isdir(".git") or is_on_tree == "true"
+        try:
+            is_on_tree = subprocess.check_output(["git",
+                                                  "rev-parse",
+                                                  "--is-inside-work-tree"])
+        except:
+            is_on_tree = False
+
+        return os.path.isdir(".git") or is_on_tree is not False
 
     @classmethod
     def assert_nondirty(cls):
