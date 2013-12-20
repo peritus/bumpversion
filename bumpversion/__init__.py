@@ -38,19 +38,25 @@ DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
 class Git(object):
 
     @classmethod
+    def is_on_tree(cls):
+        try:
+            subprocess.check_output(["git",
+                                     "rev-parse",
+                                     "--is-inside-work-tree"])
+        except:
+            on_tree = False
+        else:
+            on_tree = True
+
+        return on_tree
+
+    @classmethod
     def is_usable(cls):
         """
         This method tries to determine if the current directory is inside a git
         working tree.
         """
-        try:
-            is_on_tree = subprocess.check_output(["git",
-                                                  "rev-parse",
-                                                  "--is-inside-work-tree"])
-        except:
-            is_on_tree = False
-
-        return os.path.isdir(".git") or is_on_tree is not False
+        return os.path.isdir(".git") or Git.is_on_tree()
 
     @classmethod
     def assert_nondirty(cls):
@@ -117,8 +123,19 @@ class Git(object):
 class Mercurial(object):
 
     @classmethod
+    def is_on_tree(cls):
+        try:
+            output = subprocess.check_output(["hg", "root"])
+        except:
+            on_tree = False
+        else:
+            on_tree = not str(output).startswith('abort')
+
+        return on_tree
+
+    @classmethod
     def is_usable(cls):
-        return os.path.isdir(".hg")
+        return os.path.isdir(".hg") or Mercurial.is_on_tree()
 
     @classmethod
     def latest_tag_info(cls):
