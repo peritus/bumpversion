@@ -11,7 +11,7 @@ from os import curdir, makedirs, chdir, environ
 from os.path import join, curdir, dirname
 from shlex import split as shlex_split
 
-from bumpversion import main, DESCRIPTION
+from bumpversion import main, DESCRIPTION, Git, Mercurial
 
 environ['HGENCODING'] = 'UTF-8'
 
@@ -87,6 +87,29 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
         assert "[--new-version VERSION]" in out
     else:
         assert out == EXPECTED_USAGE
+
+
+@pytest.mark.parametrize("vcs", [("git", "Git"), ("hg", "Mercurial")])
+def test_vcs_is_usable_valid(tmpdir, vcs):
+    (vcs, klass) = vcs
+    tmpdir.chdir()
+    subprocess.check_call([vcs, "init"])
+    klass = globals()[klass]
+    assert klass.is_usable() is True
+    makedirs("./subdir")
+    chdir("./subdir")
+    assert klass.is_usable() is True
+
+
+@pytest.mark.parametrize("vcs", [("git", "Git"), ("hg", "Mercurial")])
+def test_vcs_is_usable_invalid(tmpdir, vcs):
+    (vcs, klass) = vcs
+    tmpdir.chdir()
+    klass = globals()[klass]
+    assert klass.is_usable() is False
+    makedirs("./subdir")
+    chdir("./subdir")
+    assert klass.is_usable() is False
 
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
