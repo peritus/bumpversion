@@ -34,6 +34,13 @@ DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
     sys.version.split("\n")[0].split(" ")[0],
 )
 
+def check_output(*args, **kwargs):
+    try:
+        return subprocess.check_output(*args, **kwargs)
+    except OSError as e:
+	if e.errno == 2:
+	    return '' # binary is not installed then, skip
+	raise
 
 class Git(object):
 
@@ -45,7 +52,7 @@ class Git(object):
     def assert_nondirty(cls):
         lines = [
             line.strip() for line in
-            subprocess.check_output(
+            check_output(
                 ["git", "status", "--porcelain"]).splitlines()
             if not line.strip().startswith(b"??")
         ]
@@ -58,10 +65,10 @@ class Git(object):
     def latest_tag_info(cls):
         try:
             # git-describe doesn't update the git-index, so we do that
-            subprocess.check_call(["git", "update-index", "--refresh"])
+            check_output(["git", "update-index", "--refresh"])
 
             # get info about the latest tag in git
-            describe_out = subprocess.check_output([
+            describe_out = check_output([
                 "git",
                 "describe",
                 "--dirty",
@@ -92,15 +99,15 @@ class Git(object):
 
     @classmethod
     def add_path(cls, path):
-        subprocess.check_call(["git", "add", "--update", path])
+        check_output(["git", "add", "--update", path])
 
     @classmethod
     def commit(cls, message):
-        subprocess.check_call(["git", "commit", "-m", message.encode('utf-8')])
+        check_output(["git", "commit", "-m", message.encode('utf-8')])
 
     @classmethod
     def tag(cls, name):
-        subprocess.check_call(["git", "tag", name])
+        check_output(["git", "tag", name])
 
 
 class Mercurial(object):
@@ -117,7 +124,7 @@ class Mercurial(object):
     def assert_nondirty(cls):
         lines = [
             line.strip() for line in
-            subprocess.check_output(
+            check_output(
                 ["hg", "status", "-mard"]).splitlines()
             if not line.strip().startswith(b"??")
         ]
@@ -132,11 +139,11 @@ class Mercurial(object):
 
     @classmethod
     def commit(cls, message):
-        subprocess.check_call(["hg", "commit", "-m", message.encode('utf-8')])
+        check_output(["hg", "commit", "-m", message.encode('utf-8')])
 
     @classmethod
     def tag(cls, name):
-        subprocess.check_call(["hg", "tag", name])
+        check_output(["hg", "tag", name])
 
 VCS = [Git, Mercurial]
 
