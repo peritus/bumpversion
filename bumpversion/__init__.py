@@ -38,9 +38,9 @@ def check_output(*args, **kwargs):
     try:
         return subprocess.check_output(*args, **kwargs)
     except OSError as e:
-	if e.errno == 2:
-	    return '' # binary is not installed then, skip
-	raise
+       if e.errno == 2:
+           return ''  # binary is not installed then, skip
+       raise
 
 class Git(object):
 
