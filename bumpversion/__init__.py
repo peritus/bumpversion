@@ -34,15 +34,26 @@ DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
     sys.version.split("\n")[0].split(" ")[0],
 )
 
-class Git(object):
+class BaseVCS(object):
 
     @classmethod
     def is_usable(cls):
-        return subprocess.call(
-            ["git", "rev-parse", "--git-dir"],
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE
-        ) == 0
+        try:
+            return subprocess.call(
+                cls._TEST_USABLE_COMMAND,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE
+            ) == 0
+        except OSError as e:
+            if e.errno == 2:
+                # mercurial is not installed then, ok.
+                return False
+            raise
+
+
+class Git(BaseVCS):
+
+    _TEST_USABLE_COMMAND = ["git", "rev-parse", "--git-dir"]
 
     @classmethod
     def assert_nondirty(cls):
@@ -106,15 +117,9 @@ class Git(object):
         subprocess.check_output(["git", "tag", name])
 
 
-class Mercurial(object):
+class Mercurial(BaseVCS):
 
-    @classmethod
-    def is_usable(cls):
-        return 0 == subprocess.call(
-            ["hg", "root"],
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE
-        )
+    _TEST_USABLE_COMMAND = ["hg", "root"]
 
     @classmethod
     def latest_tag_info(cls):

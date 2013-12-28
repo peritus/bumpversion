@@ -658,7 +658,6 @@ message = [{now}] [{utcnow} {utcnow:%YXX%mYY%d}]
     assert b'XX' in log
     assert b'YY' in log
 
-
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_commit_and_tag_from_below_vcs_root(tmpdir, vcs, monkeypatch):
     tmpdir.chdir()
@@ -673,4 +672,16 @@ def test_commit_and_tag_from_below_vcs_root(tmpdir, vcs, monkeypatch):
     main(['major', '--current-version', '30.0.3', '--commit', '../VERSION'])
 
     assert '31.0.0' == tmpdir.join("VERSION").read()
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_non_vcs_operations_if_vcs_is_not_installed(tmpdir, vcs, monkeypatch):
+
+    monkeypatch.setenv("PATH", "")
+
+    tmpdir.chdir()
+    tmpdir.join("VERSION").write("31.0.3")
+
+    main(['major', '--current-version', '31.0.3', 'VERSION'])
+
+    assert '32.0.0' == tmpdir.join("VERSION").read()
 
