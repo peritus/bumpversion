@@ -265,9 +265,9 @@ def split_args_in_optional_and_positional(args):
 
 def main(original_args=None):
 
-    positionals, args = split_args_in_optional_and_positional(original_args)
-
-
+    positionals, args = split_args_in_optional_and_positional(
+      sys.argv[1:] if original_args is None else original_args
+    )
 
     parser1 = argparse.ArgumentParser(add_help=False)
 
