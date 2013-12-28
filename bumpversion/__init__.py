@@ -34,25 +34,26 @@ DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
     sys.version.split("\n")[0].split(" ")[0],
 )
 
-def check_output(*args, **kwargs):
-    try:
-        return subprocess.check_output(*args, **kwargs)
-    except OSError as e:
-       if e.errno == 2:
-           return ''  # binary is not installed then, skip
-       raise
-
 class Git(object):
 
     @classmethod
     def is_usable(cls):
-        return os.path.isdir(".git")
+        return cls.is_installed() and os.path.isdir(".git")
+
+    @classmethod
+    def is_installed(cls):
+        return 1 == subprocess.call(
+            ["git", "--help"],
+            shell=True,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE
+        )
 
     @classmethod
     def assert_nondirty(cls):
         lines = [
             line.strip() for line in
-            check_output(
+            subprocess.check_output(
                 ["git", "status", "--porcelain"]).splitlines()
             if not line.strip().startswith(b"??")
         ]
@@ -65,10 +66,10 @@ class Git(object):
     def latest_tag_info(cls):
         try:
             # git-describe doesn't update the git-index, so we do that
-            check_output(["git", "update-index", "--refresh"])
+            subprocess.check_output(["git", "update-index", "--refresh"])
 
             # get info about the latest tag in git
-            describe_out = check_output([
+            describe_out = subprocess.check_output([
                 "git",
                 "describe",
                 "--dirty",
@@ -99,22 +100,31 @@ class Git(object):
 
     @classmethod
     def add_path(cls, path):
-        check_output(["git", "add", "--update", path])
+        subprocess.check_output(["git", "add", "--update", path])
 
     @classmethod
     def commit(cls, message):
-        check_output(["git", "commit", "-m", message.encode('utf-8')])
+        subprocess.check_output(["git", "commit", "-m", message.encode('utf-8')])
 
     @classmethod
     def tag(cls, name):
-        check_output(["git", "tag", name])
+        subprocess.check_output(["git", "tag", name])
 
 
 class Mercurial(object):
 
     @classmethod
     def is_usable(cls):
-        return os.path.isdir(".hg")
+        return cls.is_installed() and os.path.isdir(".hg")
+
+    @classmethod
+    def is_installed(cls):
+        return 0 == subprocess.call(
+            ["hg", "--help"],
+            shell=True,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE
+        )
 
     @classmethod
     def latest_tag_info(cls):
@@ -124,7 +134,7 @@ class Mercurial(object):
     def assert_nondirty(cls):
         lines = [
             line.strip() for line in
-            check_output(
+            subprocess.check_output(
                 ["hg", "status", "-mard"]).splitlines()
             if not line.strip().startswith(b"??")
         ]
@@ -139,11 +149,11 @@ class Mercurial(object):
 
     @classmethod
     def commit(cls, message):
-        check_output(["hg", "commit", "-m", message.encode('utf-8')])
+        subprocess.check_output(["hg", "commit", "-m", message.encode('utf-8')])
 
     @classmethod
     def tag(cls, name):
-        check_output(["hg", "tag", name])
+        subprocess.check_output(["hg", "tag", name])
 
 VCS = [Git, Mercurial]
 
@@ -445,6 +455,9 @@ def main(original_args=None):
             commit_files.append(known_args.config_file)
 
     if args.commit:
+
+        assert vcs.is_usable(), "Did not find '{}' installed, unable to commit.".format(vcs.__name__)
+
         if not args.dry_run:
             for path in commit_files:
                 vcs.add_path(path)
@@ -460,3 +473,5 @@ def main(original_args=None):
 
             if args.tag:
                 vcs.tag(args.tag_name.format(**vcs_context))
+
+
