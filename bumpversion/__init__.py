@@ -38,16 +38,11 @@ class Git(object):
 
     @classmethod
     def is_usable(cls):
-        return cls.is_installed() and os.path.isdir(".git")
-
-    @classmethod
-    def is_installed(cls):
-        return 1 == subprocess.call(
-            ["git", "--help"],
-            shell=True,
+        return subprocess.call(
+            ["git", "rev-parse", "--git-dir"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE
-        )
+        ) == 0
 
     @classmethod
     def assert_nondirty(cls):
@@ -115,13 +110,8 @@ class Mercurial(object):
 
     @classmethod
     def is_usable(cls):
-        return cls.is_installed() and os.path.isdir(".hg")
-
-    @classmethod
-    def is_installed(cls):
         return 0 == subprocess.call(
-            ["hg", "--help"],
-            shell=True,
+            ["hg", "root"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE
         )
@@ -456,7 +446,7 @@ def main(original_args=None):
 
     if args.commit:
 
-        assert vcs.is_usable(), "Did not find '{}' installed, unable to commit.".format(vcs.__name__)
+        assert vcs.is_usable(), "Did find '{}' unusable, unable to commit.".format(vcs.__name__)
 
         if not args.dry_run:
             for path in commit_files:
