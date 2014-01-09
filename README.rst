@@ -163,6 +163,13 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.3.7**
+
+- Don't fail if git or hg is not installed (thanks @keimlink)
+- "files" option is now optional (`#16 <https://github.com/peritus/bumpversion/issues/16>`_)
+- Fix bug related to dirty work dir (`#28 <https://github.com/peritus/bumpversion/issues/28>`_)
+
+
 **v0.3.6**
 
 - Fix --tag default (thanks @keimlink)
