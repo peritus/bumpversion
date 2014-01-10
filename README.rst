@@ -163,6 +163,10 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.3.8**
+
+- Fix: --parse/--serialize didn't work from cfg (`#34 <https://github.com/peritus/bumpversion/issues/34>`_)
+
 **v0.3.7**
 
 - Don't fail if git or hg is not installed (thanks @keimlink)
