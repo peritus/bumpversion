@@ -274,11 +274,13 @@ def main(original_args=None):
       sys.argv[1:] if original_args is None else original_args
     )
 
-    parser1 = argparse.ArgumentParser(add_help=False)
+    parser1 = argparse.ArgumentParser(add_help=False, prog='bumpversion')
 
     parser1.add_argument(
         '--config-file', default='.bumpversion.cfg', metavar='FILE',
         help='Config file to read most of the variables from', required=False)
+    parser1.add_argument('-v', '--version', action='version',
+                         version="%s %s" % (parser1.prog, __VERSION__))
 
     known_args, remaining_argv = parser1.parse_known_args(args)
 
