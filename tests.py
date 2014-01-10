@@ -26,10 +26,10 @@ xfail_if_no_hg = pytest.mark.xfail(
 )
 
 EXPECTED_USAGE = ("""
-usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
-               [--current-version VERSION] [--dry-run] --new-version VERSION
-               [--commit | --no-commit] [--tag | --no-tag]
-               [--tag-name TAG_NAME] [--message COMMIT_MSG]
+usage: py.test [-h] [--config-file FILE] [-v] [--parse REGEX]
+               [--serialize FORMAT] [--current-version VERSION] [--dry-run]
+               --new-version VERSION [--commit | --no-commit]
+               [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part [file [file ...]]
 
 %s
@@ -42,6 +42,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
+  -v, --version         show program's version number and exit
   --parse REGEX         Regex parsing the version string (default:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
@@ -91,7 +92,7 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     assert err == ""
 
     if vcs == "git":
-        assert "usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]" in out
+        assert "usage: py.test [-h] [--config-file FILE] [-v] [--parse REGEX]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
         assert "[--new-version VERSION]" in out
     else:
