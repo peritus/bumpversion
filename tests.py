@@ -222,6 +222,21 @@ def test_bump_version_custom_parse(tmpdir):
 
     assert 'XXX1;1;0' == tmpdir.join("file6").read()
 
+def test_bump_version_custom_parse_serialize_configfile(tmpdir):
+
+    tmpdir.join("file12").write("ZZZ8;0;0")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+files = file12
+current_version = ZZZ8;0;0
+serialize = ZZZ{spam};{garlg};{slurp}
+parse = ZZZ(?P<spam>\d+);(?P<garlg>\d+);(?P<slurp>\d+)
+""")
+
+    main(['garlg'])
+
+    assert 'ZZZ8;1;0' == tmpdir.join("file12").read()
 
 def test_bumpversion_custom_parse_semver(tmpdir):
     tmpdir.join("file15").write("XXX1.1.7-master+allan1")

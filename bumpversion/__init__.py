@@ -317,10 +317,10 @@ def main(original_args=None):
                          help='Version that needs to be updated', required=False)
     parser2.add_argument('--parse', metavar='REGEX',
                          help='Regex parsing the version string',
-                         default='(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)')
+                         default=defaults.get("parse", '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'))
     parser2.add_argument('--serialize', metavar='FORMAT',
                          help='How to format what is parsed back to a version',
-                         default='{major}.{minor}.{patch}')
+                         default=defaults.get("serialize", str('{major}.{minor}.{patch}')))
 
     known_args, remaining_argv = parser2.parse_known_args(args)
 
