@@ -45,7 +45,7 @@ optional arguments:
   --parse REGEX         Regex parsing the version string (default:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
-                        (default: {major}.{minor}.{patch})
+                        (default: ['{major}.{minor}.{patch}'])
   --current-version VERSION
                         Version that needs to be updated (default: None)
   --dry-run, -n         Don't write any files, just pretend. (default: False)
@@ -88,10 +88,9 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
         main(['--help'])
 
     out, err = capsys.readouterr()
-    assert err == ""
 
     if vcs == "git":
-        assert "usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]" in out
+        assert "usage: py.test [-h] [--config-file FILE] [--parse REGEX]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
         assert "[--new-version VERSION]" in out
     else:
@@ -699,4 +698,64 @@ def test_non_vcs_operations_if_vcs_is_not_installed(tmpdir, vcs, monkeypatch):
     main(['major', '--current-version', '31.0.3', 'VERSION'])
 
     assert '32.0.0' == tmpdir.join("VERSION").read()
+
+def test_multiple_serialize_threepart(tmpdir):
+    tmpdir.join("fileA").write("0.9")
+    tmpdir.chdir()
+    main([
+         '--current-version', '0.9',
+         '--parse', '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?',
+         '--serialize', 'Version: {major}.{minor}.{patch}',
+         '--serialize', 'Version: {major}.{minor}',
+         '--serialize', 'Version: {major}',
+         'major',
+         'fileA'
+         ])
+
+    assert 'Version: 1' == tmpdir.join("fileA").read()
+
+def test_multiple_serialize_twopart(tmpdir):
+    tmpdir.join("fileB").write("0.9")
+    tmpdir.chdir()
+    main([
+         '--current-version', '0.9',
+         '--parse', '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?',
+         '--serialize', '{major}.{minor}.{patch}',
+         '--serialize', '{major}.{minor}',
+         'minor',
+         'fileB'
+         ])
+
+    assert '0.10' == tmpdir.join("fileB").read()
+
+def test_multiple_serialize_twopart_patch(tmpdir):
+    tmpdir.join("fileC").write("0.7")
+    tmpdir.chdir()
+    main([
+         '--current-version', '0.7',
+         '--parse', '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?',
+         '--serialize', '{major}.{minor}.{patch}',
+         '--serialize', '{major}.{minor}',
+         'patch',
+         'fileC'
+         ])
+
+    assert '0.7.1' == tmpdir.join("fileC").read()
+
+def test_multiple_serialize_twopart_patch_configfile(tmpdir):
+    tmpdir.join("fileD").write("0.6")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+files = fileD
+current_version = 0.6
+serialize =
+  {major}.{minor}.{patch}
+  {major}.{minor}
+parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+""")
+
+    main(['patch'])
+
+    assert '0.6.1' == tmpdir.join("fileD").read()
 

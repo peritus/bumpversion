@@ -109,9 +109,24 @@ Options
 ``--serialize`` / ``serialize =``
   **default:** "``{major}.{minor}.{patch}``"
 
-  Template specifying how to serialize the version parts to a version string again.
+  Template specifying how to serialize the version parts back to a version string.
 
   This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are parsed values of the named groups specified in ``--parse`` as well as all environment variables (prefixed with ``$``).
+
+  Can be specified multiple times, bumpversion will try the serialization
+  formats beginning with the first and choose the last one where all values can
+  be represented.
+
+  Given the example below, the new version *1.9* it will be serialized as
+  ``1.9``, but the version *2.0* will be serialized as ``2``.
+
+  Multiple values on the command line are given like ``--serialize
+  {major}.{minor} --serialize {major}``, the configuration file uses multiple
+  lines::
+
+    serialize =
+      {major}.{minor}
+      {major}
 
 ``(--tag | --no-tag)`` / ``tag = (True | False)``
   **default:** `Don't create a tag`
@@ -162,6 +177,10 @@ Development of this happens on GitHub, patches including tests, documentation ar
 
 Changes
 =======
+
+**v0.4.0 (unreleased)**
+
+- Allow option --serialize multiple times
 
 **v0.3.8**
 

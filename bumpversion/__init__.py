@@ -34,6 +34,22 @@ DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
     sys.version.split("\n")[0].split(" ")[0],
 )
 
+from argparse import _AppendAction
+class DiscardDefaultIfSpecifiedAppendAction(_AppendAction):
+
+    '''
+    Fixes bug http://bugs.python.org/issue16399 for 'append' action
+    '''
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        warnings.warn("{}".format(locals()))
+        if getattr(self, "_discarded_default", None) is None:
+            setattr(namespace, self.dest, [])
+            self._discarded_default = True
+
+        super(DiscardDefaultIfSpecifiedAppendAction, self).__call__(
+                parser, namespace, values, option_string=None)
+
 class BaseVCS(object):
 
     @classmethod
@@ -162,19 +178,32 @@ class VersionPart(object):
     FIRST_NUMERIC = re.compile('([^\d]*)(\d+)(.*)')
 
     def __init__(self, value):
-        self.value = value
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value or "0"
 
     def bump(self):
         part_prefix, numeric_version, part_suffix = self.FIRST_NUMERIC.search(self.value).groups()
         bumped_numeric = str(int(numeric_version) + 1)
-        self.value = "".join([part_prefix, bumped_numeric, part_suffix])
+        self._value = "".join([part_prefix, bumped_numeric, part_suffix])
+
+    def is_optional(self):
+        return self.value == "0"
 
     def __format__(self, format_spec):
         return self.value
 
-    def zero(self):
-        self.value = "0"
+    def __repr__(self):
+        return '<bumpversion.VersionPart:{}>'.format(self.value)
 
+    def zero(self):
+        self._value = "0"
+
+class IncompleteVersionRepresenationException(Exception):
+    def __init__(self, message):
+        self.message = message
 
 class Version(object):
 
@@ -182,22 +211,27 @@ class Version(object):
     Holds a complete representation of a version string
     """
 
-    def __init__(self, parse_regex, serialize_format, context=None):
+    def __init__(self, parse_regex, serialize_formats, context=None):
 
         try:
             self.parse_regex = re.compile(parse_regex)
         except:
             warnings.warn("--patch '{}' is not a valid regex".format(parse_regex))
 
-        self.serialize_format = serialize_format
+        self.serialize_formats = serialize_formats
 
         if not context:
             context = {}
 
         self.context = context
 
+    def _labels_for_format(self, serialize_format):
+        return (label for _, label, _, _ in Formatter().parse(serialize_format))
+
     def order(self):
-        return (label for _, label, _, _ in Formatter().parse(self.serialize_format))
+        # currently, order depends on the first given serialization format
+        # this seems like a good idea because this should be the most complete format
+        return self._labels_for_format(self.serialize_formats[0])
 
     def register_part(self, part):
         pass
@@ -213,16 +247,79 @@ class Version(object):
         for key, value in match.groupdict().items():
             self._parsed[key] = VersionPart(value)
 
-    def serialize(self):
+    def _serialize(self, serialize_format, raise_if_incomplete=False):
+        """
+        Attempts to serialize a version with the given serialization format.
+
+        Raises KeyError if not serializable
+        """
         values = self.context.copy()
         values.update(self._parsed)
+
         try:
-            return self.serialize_format.format(**values)
+            # test whether all parts required in the format have values
+            serialized = serialize_format.format(**values)
+
         except KeyError as e:
             assert hasattr(e, 'message'), dir(e)
-            warnings.warn("Did not find key {} in {} when serializing version number".format(
+            raise KeyError("Did not find key {} in {} when serializing version number".format(
                 repr(e.message), repr(self._parsed)))
-            return
+
+
+        keys_needing_representation = set([k for k, v in self._parsed.items() if not v.is_optional()])
+
+        keys_needing_representation = set([])
+        found_required = False
+        for k in self.order():
+            v = values[k]
+
+            if not isinstance(v, VersionPart):
+                # values coming from environment variables don't need
+                # representation
+                continue
+
+            if not v.is_optional():
+                found_required = True
+                keys_needing_representation.add(k)
+            elif not found_required:
+                keys_needing_representation.add(k)
+
+        required_by_format = set(self._labels_for_format(serialize_format))
+
+        # try whether all parsed keys are represented
+        if raise_if_incomplete:
+            if keys_needing_representation > required_by_format:
+                raise IncompleteVersionRepresenationException(
+                    "Could not represent all parsed values '{}' in format '{}' ({})".format(
+                        keys_needing_representation,
+                        serialize_format,
+                        required_by_format
+                    ))
+
+        return serialized
+
+
+    def _choose_serialize_format(self):
+
+        chosen = None
+
+        for serialize_format in self.serialize_formats:
+            try:
+                self._serialize(serialize_format, raise_if_incomplete=True)
+                chosen = serialize_format
+            except IncompleteVersionRepresenationException as e:
+                if not chosen:
+                    chosen = serialize_format
+            except KeyError as e:
+                pass
+
+        if not chosen:
+            raise KeyError("Did not find suitable serialization format")
+
+        return chosen
+
+    def serialize(self):
+        return self._serialize(self._choose_serialize_format())
 
     def bump(self, part_name):
         bumped = False
@@ -299,6 +396,13 @@ def main(original_args=None):
 
         defaults.update(dict(config.items("bumpversion")))
 
+        for listvaluename in ("serialize",):
+            try:
+                value = config.get("bumpversion", listvaluename)
+                defaults[listvaluename] = list(filter(None, (x.strip() for x in value.splitlines())))
+            except NoOptionError:
+                pass  # no default value then ;)
+
         for boolvaluename in ("commit", "tag", "dry_run"):
             try:
                 defaults[boolvaluename] = config.getboolean(
@@ -319,12 +423,15 @@ def main(original_args=None):
                          help='Regex parsing the version string',
                          default=defaults.get("parse", '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'))
     parser2.add_argument('--serialize', metavar='FORMAT',
+                         action=DiscardDefaultIfSpecifiedAppendAction,
                          help='How to format what is parsed back to a version',
-                         default=defaults.get("serialize", str('{major}.{minor}.{patch}')))
+                         default=defaults.get("serialize", [str('{major}.{minor}.{patch}')]))
 
     known_args, remaining_argv = parser2.parse_known_args(args)
 
     defaults.update(vars(known_args))
+
+    assert type(known_args.serialize) == list
 
     time_context = {
         'now': datetime.now(),
@@ -343,7 +450,12 @@ def main(original_args=None):
         if len(positionals) > 0:
             v.bump(positionals[0])
 
-        defaults['new_version'] = v.serialize()
+        try:
+            defaults['new_version'] = v.serialize()
+        except KeyError as e:
+            pass
+        except IncompleteVersionRepresenationException as e:
+            pass
 
     parser3 = argparse.ArgumentParser(
         description=DESCRIPTION,
