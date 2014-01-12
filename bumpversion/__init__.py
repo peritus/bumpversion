@@ -15,7 +15,6 @@ except:
 
 import argparse
 import os
-import warnings
 import re
 import sre_constants
 import subprocess
@@ -34,6 +33,9 @@ DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
     sys.version.split("\n")[0].split(" ")[0],
 )
 
+import logging
+logger = logging.getLogger("bumpversion")
+
 from argparse import _AppendAction
 class DiscardDefaultIfSpecifiedAppendAction(_AppendAction):
 
@@ -42,7 +44,6 @@ class DiscardDefaultIfSpecifiedAppendAction(_AppendAction):
     '''
 
     def __call__(self, parser, namespace, values, option_string=None):
-        warnings.warn("{}".format(locals()))
         if getattr(self, "_discarded_default", None) is None:
             setattr(namespace, self.dest, [])
             self._discarded_default = True
@@ -215,8 +216,9 @@ class Version(object):
 
         try:
             self.parse_regex = re.compile(parse_regex)
-        except:
-            warnings.warn("--patch '{}' is not a valid regex".format(parse_regex))
+        except sre_constants.error as e:
+            logger.error("--parse '{}' is not a valid regex".format(parse_regex))
+            raise e
 
         self.serialize_formats = serialize_formats
 
@@ -241,7 +243,8 @@ class Version(object):
 
         self._parsed = {}
         if not match:
-            warnings.warn("'{}' does not parse current version".format(self.parse_regex.pattern))
+            logger.warn("Evaluating 'parse' option: '{}' does not parse current version '{}'".format(
+                self.parse_regex.pattern, version_string))
             return
 
         for key, value in match.groupdict().items():
@@ -261,10 +264,12 @@ class Version(object):
             serialized = serialize_format.format(**values)
 
         except KeyError as e:
-            assert hasattr(e, 'message'), dir(e)
+            missing_key = getattr(e,
+                'message', # Python 2
+                e.args[0] # Python 3
+            )
             raise KeyError("Did not find key {} in {} when serializing version number".format(
-                repr(e.message), repr(self._parsed)))
-
+                repr(missing_key), repr(self._parsed)))
 
         keys_needing_representation = set([k for k, v in self._parsed.items() if not v.is_optional()])
 
@@ -377,7 +382,25 @@ def main(original_args=None):
         '--config-file', default='.bumpversion.cfg', metavar='FILE',
         help='Config file to read most of the variables from', required=False)
 
+    parser1.add_argument(
+        '--verbose', '-v', action='count', default=0,
+        help='Print verbose logging to stderr', required=False)
+
     known_args, remaining_argv = parser1.parse_known_args(args)
+
+    if len(logger.handlers) == 0:
+        ch = logging.StreamHandler(sys.stderr)
+        logformatter = logging.Formatter('[%(levelname)s] %(message)s\n')
+        ch.setFormatter(logformatter)
+        logger.addHandler(ch)
+
+    log_level = {
+        0: logging.WARNING,
+        1: logging.INFO,
+        2: logging.DEBUG,
+    }.get(known_args.verbose, logging.DEBUG)
+
+    logger.setLevel(log_level)
 
     defaults = {}
     vcs_info = {}
@@ -410,9 +433,12 @@ def main(original_args=None):
             except NoOptionError:
                 pass  # no default value then ;)
 
-    elif known_args.config_file != parser1.get_default('config_file'):
-        raise argparse.ArgumentTypeError("Could not read config file at {}".format(
-            known_args.config_file))
+    else:
+        message = "Could not read config file at {}".format(known_args.config_file)
+        if known_args.config_file != parser1.get_default('config_file'):
+            raise argparse.ArgumentTypeError(message)
+        else:
+            logger.info(message)
 
     parser2 = argparse.ArgumentParser(add_help=False, parents=[parser1])
     parser2.set_defaults(**defaults)
@@ -438,11 +464,14 @@ def main(original_args=None):
         'utcnow': datetime.utcnow(),
     }
 
-    v = Version(
-        known_args.parse,
-        known_args.serialize,
-        context=dict(list(time_context.items()) + list(prefixed_environ().items()) + list(vcs_info.items()))
-    )
+    try:
+        v = Version(
+            known_args.parse,
+            known_args.serialize,
+            context=dict(list(time_context.items()) + list(prefixed_environ().items()) + list(vcs_info.items()))
+        )
+    except sre_constants.error as e:
+        sys.exit(1)
 
     if not 'new_version' in defaults and known_args.current_version:
         v.parse(known_args.current_version)

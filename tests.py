@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import pytest
 import sys
+import logging
+import mock
 
 import argparse
 import subprocess
@@ -26,10 +28,10 @@ xfail_if_no_hg = pytest.mark.xfail(
 )
 
 EXPECTED_USAGE = ("""
-usage: py.test [-h] [--config-file FILE] [--parse REGEX] [--serialize FORMAT]
-               [--current-version VERSION] [--dry-run] --new-version VERSION
-               [--commit | --no-commit] [--tag | --no-tag]
-               [--tag-name TAG_NAME] [--message COMMIT_MSG]
+usage: py.test [-h] [--config-file FILE] [--verbose] [--parse REGEX]
+               [--serialize FORMAT] [--current-version VERSION] [--dry-run]
+               --new-version VERSION [--commit | --no-commit]
+               [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part [file [file ...]]
 
 %s
@@ -42,6 +44,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
+  --verbose, -v         Print verbose logging to stderr (default: 0)
   --parse REGEX         Regex parsing the version string (default:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
@@ -90,7 +93,7 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     out, err = capsys.readouterr()
 
     if vcs == "git":
-        assert "usage: py.test [-h] [--config-file FILE] [--parse REGEX]" in out
+        assert "usage: py.test [-h] [--config-file FILE] [--verbose] [--parse REGEX]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
         assert "[--new-version VERSION]" in out
     else:
@@ -772,4 +775,36 @@ parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
     main(['patch'])
 
     assert '0.6.1' == tmpdir.join("fileD").read()
+
+
+def test_log_no_config_file_info_message(tmpdir, capsys):
+    tmpdir.chdir()
+
+    tmpdir.join("blargh.txt").write("1.0.0")
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['--verbose', '--verbose', '--current-version', '1.0.0', 'patch', 'blargh.txt'])
+
+    logger.info.assert_called_with(
+        "Could not read config file at .bumpversion.cfg"
+    )
+
+def test_log_parse_doesnt_parse_current_version(tmpdir):
+    tmpdir.chdir()
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['--parse', 'xxx', '--current-version', '12', '--new-version', '13', 'patch'])
+
+    logger.warn.assert_called_with(
+        "Evaluating 'parse' option: 'xxx' does not parse current version '12'"
+    )
+
+def test_log_invalid_regex_exit(tmpdir):
+    tmpdir.chdir()
+
+    with pytest.raises(SystemExit):
+        with mock.patch("bumpversion.logger") as logger:
+            main(['--parse', '*kittens*', '--current-version', '12', '--new-version', '13', 'patch'])
+
+    logger.error.assert_called_with("--parse '*kittens*' is not a valid regex")
 
