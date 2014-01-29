@@ -207,6 +207,10 @@ class IncompleteVersionRepresenationException(Exception):
     def __init__(self, message):
         self.message = message
 
+class MissingValueForSerializationException(Exception):
+    def __init__(self, message):
+        self.message = message
+
 class Version(object):
 
     """
@@ -263,7 +267,7 @@ class Version(object):
         """
         Attempts to serialize a version with the given serialization format.
 
-        Raises KeyError if not serializable
+        Raises MissingValueForSerializationException if not serializable
         """
         values = self.context.copy()
         values.update(self._parsed)
@@ -279,8 +283,9 @@ class Version(object):
                 'message', # Python 2
                 e.args[0] # Python 3
             )
-            raise KeyError("Did not find key {} in {} when serializing version number".format(
-                repr(missing_key), repr(self._parsed)))
+            raise MissingValueForSerializationException(
+                "Did not find key {} in {} when serializing version number".format(
+                    repr(missing_key), repr(self._parsed)))
 
         keys_needing_representation = set([k for k, v in self._parsed.items() if not v.is_optional()])
 
@@ -306,10 +311,9 @@ class Version(object):
         if raise_if_incomplete:
             if keys_needing_representation > required_by_format:
                 raise IncompleteVersionRepresenationException(
-                    "Could not represent all parsed values '{}' in format '{}' ({})".format(
-                        keys_needing_representation,
+                    "Could not represent '{}' in format '{}'".format(
+                        "', '".join(keys_needing_representation - required_by_format),
                         serialize_format,
-                        required_by_format
                     ))
 
         return serialized
@@ -325,16 +329,18 @@ class Version(object):
             try:
                 self._serialize(serialize_format, raise_if_incomplete=True)
                 chosen = serialize_format
+                logger.info("Found '{}' to be a usable serialization format".format(chosen))
             except IncompleteVersionRepresenationException as e:
+                logger.info(e.message)
                 if not chosen:
                     chosen = serialize_format
-            except KeyError as e:
-                pass
+            except MissingValueForSerializationException as e:
+                logger.info(e.message)
 
         if not chosen:
             raise KeyError("Did not find suitable serialization format")
 
-        logger.info("Chose serialization format '{}'".format(serialize_format))
+        logger.info("Selected serialization format '{}'".format(chosen))
 
         return chosen
 
@@ -513,10 +519,12 @@ def main(original_args=None):
 
         try:
             defaults['new_version'] = v.serialize()
-        except KeyError as e:
-            pass
+        except MissingValueForSerializationException as e:
+            logger.info("Opportunistic finding of new_version failed: " + e.message)
         except IncompleteVersionRepresenationException as e:
-            pass
+            logger.info("Opportunistic finding of new_version failed: " + e.message)
+        except KeyError as e:
+            logger.info("Opportunistic finding of new_version failed")
 
     parser3 = argparse.ArgumentParser(
         description=DESCRIPTION,

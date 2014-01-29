@@ -803,7 +803,8 @@ def test_log_no_config_file_info_message(tmpdir, capsys):
         info|Attempting to increment part 'patch'|
         info|Values are now: major=1, minor=0, patch=1|
         info|Available serialization formats: '{major}.{minor}.{patch}'|
-        info|Chose serialization format '{major}.{minor}.{patch}'|
+        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
+        info|Selected serialization format '{major}.{minor}.{patch}'|
         info|Serialized to '1.0.1'|
         info|New version will be '1.0.1'|
         info|Asserting files blargh.txt contain string '1.0.0':|
@@ -833,6 +834,8 @@ def test_log_parse_doesnt_parse_current_version(tmpdir):
         info|Attempting to increment part 'patch'|
         info|Values are now: |
         info|Available serialization formats: '{major}.{minor}.{patch}'|
+        info|Did not find key 'major' in {} when serializing version number|
+        info|Opportunistic finding of new_version failed|
         info|New version will be '13'|
         info|Asserting files  contain string '12':|
     """).strip()
@@ -888,7 +891,9 @@ def test_complex_info_logging(tmpdir, capsys):
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=4, patch=1|
         info|Available serialization formats: '{major}.{minor}.{patch}', '{major}.{minor}'|
-        info|Chose serialization format '{major}.{minor}'|
+        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
+        info|Could not represent 'patch' in format '{major}.{minor}'|
+        info|Selected serialization format '{major}.{minor}.{patch}'|
         info|Serialized to '0.4.1'|
         info|New version will be '0.4.1'|
         info|Asserting files fileE contain string '0.4':|
