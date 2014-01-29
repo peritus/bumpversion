@@ -967,6 +967,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         info|Could not represent 'patch' in format '{major}.{minor}'|
         info|Selected serialization format '{major}.{minor}.{patch}'|
         info|Serialized to '0.8.1'|
+        info|Dry run active, won't touch any files.|
         info|New version will be '0.8.1'|
         info|Asserting files dont_touch_me.txt contain string '0.8':|
         info|Found '0.8' in dont_touch_me.txt at line 0: 0.8|

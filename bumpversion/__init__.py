@@ -579,6 +579,9 @@ def main(original_args=None):
 
     args = parser3.parse_args(remaining_argv + positionals)
 
+    if args.dry_run:
+        logger.info("Dry run active, won't touch any files.")
+
     logger.info("New version will be '{}'".format(args.new_version))
 
     files = files or positionals[1:]
