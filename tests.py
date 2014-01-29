@@ -12,6 +12,7 @@ import subprocess
 from os import curdir, makedirs, chdir, environ
 from os.path import join, curdir, dirname
 from shlex import split as shlex_split
+from textwrap import dedent
 
 from bumpversion import main, DESCRIPTION
 
@@ -26,6 +27,14 @@ xfail_if_no_hg = pytest.mark.xfail(
   subprocess.call(["hg", "--help"], shell=True) != 0,
   reason="hg is not installed"
 )
+
+def _mock_calls_to_string(called_mock):
+    return ["{}|{}|{}".format(
+        name,
+        args[0] if len(args) > 0  else args,
+        repr(kwargs) if len(kwargs) > 0 else ""
+    ) for name, args, kwargs in called_mock.mock_calls]
+
 
 EXPECTED_USAGE = ("""
 usage: py.test [-h] [--config-file FILE] [--verbose] [--parse REGEX]
@@ -44,7 +53,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
-  --verbose, -v         Print verbose logging to stderr (default: 0)
+  --verbose             Print verbose logging to stderr (default: 0)
   --parse REGEX         Regex parsing the version string (default:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
@@ -785,9 +794,29 @@ def test_log_no_config_file_info_message(tmpdir, capsys):
     with mock.patch("bumpversion.logger") as logger:
         main(['--verbose', '--verbose', '--current-version', '1.0.0', 'patch', 'blargh.txt'])
 
-    logger.info.assert_called_with(
-        "Could not read config file at .bumpversion.cfg"
-    )
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    EXPECTED_LOG = dedent("""
+        info|Could not read config file at .bumpversion.cfg|
+        info|Parsing current version '1.0.0' with '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=1, minor=0, patch=0|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=1, minor=0, patch=1|
+        info|Available serialization formats: '{major}.{minor}.{patch}'|
+        info|Chose serialization format '{major}.{minor}.{patch}'|
+        info|Serialized to '1.0.1'|
+        info|New version will be '1.0.1'|
+        info|Asserting files blargh.txt contain string '1.0.0':|
+        info|Found '1.0.0' in blargh.txt at line 0: 1.0.0|
+        info|Changing file blargh.txt:|
+        info|--- a/blargh.txt
+        +++ b/blargh.txt
+        @@ -1 +1 @@
+        -1.0.0
+        +1.0.1|
+    """).strip()
+
+    assert actual_log == EXPECTED_LOG
 
 def test_log_parse_doesnt_parse_current_version(tmpdir):
     tmpdir.chdir()
@@ -795,9 +824,20 @@ def test_log_parse_doesnt_parse_current_version(tmpdir):
     with mock.patch("bumpversion.logger") as logger:
         main(['--parse', 'xxx', '--current-version', '12', '--new-version', '13', 'patch'])
 
-    logger.warn.assert_called_with(
-        "Evaluating 'parse' option: 'xxx' does not parse current version '12'"
-    )
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    EXPECTED_LOG = dedent("""
+        info|Could not read config file at .bumpversion.cfg|
+        info|Parsing current version '12' with 'xxx'|
+        warn|Evaluating 'parse' option: 'xxx' does not parse current version '12'|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: |
+        info|Available serialization formats: '{major}.{minor}.{patch}'|
+        info|New version will be '13'|
+        info|Asserting files  contain string '12':|
+    """).strip()
+
+    assert actual_log == EXPECTED_LOG
 
 def test_log_invalid_regex_exit(tmpdir):
     tmpdir.chdir()
@@ -806,5 +846,72 @@ def test_log_invalid_regex_exit(tmpdir):
         with mock.patch("bumpversion.logger") as logger:
             main(['--parse', '*kittens*', '--current-version', '12', '--new-version', '13', 'patch'])
 
-    logger.error.assert_called_with("--parse '*kittens*' is not a valid regex")
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    EXPECTED_LOG = dedent("""
+        info|Could not read config file at .bumpversion.cfg|
+        error|--parse '*kittens*' is not a valid regex|
+    """).strip()
+
+    assert actual_log == EXPECTED_LOG
+
+def test_complex_info_logging(tmpdir, capsys):
+    tmpdir.join("fileE").write("0.4")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = fileE
+        current_version = 0.4
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?"""))
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['patch'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|Reading config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = fileE
+        current_version = 0.4
+        serialize = 
+        	{major}.{minor}.{patch}
+        	{major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+        
+        |
+        info|Parsing current version '0.4' with '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=4, patch=0|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=0, minor=4, patch=1|
+        info|Available serialization formats: '{major}.{minor}.{patch}', '{major}.{minor}'|
+        info|Chose serialization format '{major}.{minor}'|
+        info|Serialized to '0.4.1'|
+        info|New version will be '0.4.1'|
+        info|Asserting files fileE contain string '0.4':|
+        info|Found '0.4' in fileE at line 0: 0.4|
+        info|Changing file fileE:|
+        info|--- a/fileE
+        +++ b/fileE
+        @@ -1 +1 @@
+        -0.4
+        +0.4.1|
+        info|Writing to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = fileE
+        current_version = 0.4
+        serialize = 
+        	{major}.{minor}.{patch}
+        	{major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+        
+        |
+        """).strip()
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert actual_log == EXPECTED_LOG
 

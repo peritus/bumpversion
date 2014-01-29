@@ -21,6 +21,7 @@ import subprocess
 import io
 from string import Formatter
 from datetime import datetime
+from difflib import unified_diff
 
 import sys
 import codecs
@@ -28,7 +29,7 @@ sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
 __VERSION__ = '0.3.8'
 
-DESCRIPTION = 'Bumpversion: v{} (using Python v{})'.format(
+DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
     __VERSION__,
     sys.version.split("\n")[0].split(" ")[0],
 )
@@ -103,7 +104,7 @@ class Git(BaseVCS):
             ], stderr=subprocess.STDOUT
             ).decode().split("-")
         except subprocess.CalledProcessError:
-            # logging.warn("Error when running git describe")
+            # logger.warn("Error when running git describe")
             return {}
 
         info = {}
@@ -239,6 +240,9 @@ class Version(object):
         pass
 
     def parse(self, version_string):
+
+        logger.info("Parsing current version '{}' with '{}'".format(version_string, self.parse_regex.pattern))
+
         match = self.parse_regex.search(version_string)
 
         self._parsed = {}
@@ -250,6 +254,11 @@ class Version(object):
         for key, value in match.groupdict().items():
             self._parsed[key] = VersionPart(value)
 
+        logger.info("Parsed the following values: " + self._keyvalue_string())
+
+    def _keyvalue_string(self):
+        return ", ".join("{}={}".format(k, v) for k, v in sorted(self._parsed.items()))
+
     def _serialize(self, serialize_format, raise_if_incomplete=False):
         """
         Attempts to serialize a version with the given serialization format.
@@ -258,6 +267,8 @@ class Version(object):
         """
         values = self.context.copy()
         values.update(self._parsed)
+
+        # TODO dump complete context on debug level
 
         try:
             # test whether all parts required in the format have values
@@ -308,6 +319,8 @@ class Version(object):
 
         chosen = None
 
+        logger.info("Available serialization formats: '{}'".format("', '".join(self.serialize_formats)))
+
         for serialize_format in self.serialize_formats:
             try:
                 self._serialize(serialize_format, raise_if_incomplete=True)
@@ -321,12 +334,21 @@ class Version(object):
         if not chosen:
             raise KeyError("Did not find suitable serialization format")
 
+        logger.info("Chose serialization format '{}'".format(serialize_format))
+
         return chosen
 
     def serialize(self):
-        return self._serialize(self._choose_serialize_format())
+        serialized = self._serialize(self._choose_serialize_format())
+
+        logger.info("Serialized to '{}'".format(serialized))
+
+        return serialized
 
     def bump(self, part_name):
+
+        logger.info("Attempting to increment part '{}'".format(part_name))
+
         bumped = False
 
         for label in self.order():
@@ -337,6 +359,8 @@ class Version(object):
                 bumped = True
             elif bumped:
                 self._parsed[label].zero()
+
+        logger.info("Values are now: " + self._keyvalue_string())
 
 OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--config-file',
@@ -383,14 +407,14 @@ def main(original_args=None):
         help='Config file to read most of the variables from', required=False)
 
     parser1.add_argument(
-        '--verbose', '-v', action='count', default=0,
+        '--verbose', action='count', default=0,
         help='Print verbose logging to stderr', required=False)
 
     known_args, remaining_argv = parser1.parse_known_args(args)
 
     if len(logger.handlers) == 0:
         ch = logging.StreamHandler(sys.stderr)
-        logformatter = logging.Formatter('[%(levelname)s] %(message)s\n')
+        logformatter = logging.Formatter('%(message)s')
         ch.setFormatter(logformatter)
         logger.addHandler(ch)
 
@@ -401,6 +425,8 @@ def main(original_args=None):
     }.get(known_args.verbose, logging.DEBUG)
 
     logger.setLevel(log_level)
+
+    logger.debug("Starting {}".format(DESCRIPTION))
 
     defaults = {}
     vcs_info = {}
@@ -416,6 +442,12 @@ def main(original_args=None):
     if os.path.exists(known_args.config_file):
         config = RawConfigParser()
         config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
+
+        log_config = StringIO()
+        config.write(log_config)
+        logger.info("Reading config file {}:".format(known_args.config_file))
+
+        logger.info(log_config.getvalue())
 
         defaults.update(dict(config.items("bumpversion")))
 
@@ -539,7 +571,10 @@ def main(original_args=None):
 
     args = parser3.parse_args(remaining_argv + positionals)
 
+    logger.info("New version will be '{}'".format(args.new_version))
+
     files = files or positionals[1:]
+
 
     for vcs in VCS:
         if vcs.is_usable():
@@ -547,22 +582,31 @@ def main(original_args=None):
             break
 
     # make sure files exist and contain version string
+
+    logger.info("Asserting files {} contain string '{}':".format(", ".join(files), args.current_version))
+
     for path in files:
         with io.open(path, 'rb') as f:
-            before = f.read().decode('utf-8')
 
-        assert args.current_version in before, 'Did not find string {} in file {}'.format(
-            args.current_version, path)
+            found_before = False
+
+            for lineno, line in enumerate(f.readlines()):
+                if args.current_version in line.decode('utf-8'):
+                    found_before = True
+                    logger.info("Found '{}' in {} at line {}: {}".format(args.current_version, path, lineno, line.decode('utf-8').rstrip()))
+
+            assert found_before, 'Did not find string {} in file {}'.format(
+                args.current_version, path)
 
     # change version string in files
     for path in files:
         with io.open(path, 'rb') as f:
             before = f.read().decode('utf-8')
 
-        # assert type(args.current_version) == bytes
-        # assert type(args.new_version) == bytes
-
         after = before.replace(args.current_version, args.new_version)
+
+        logger.info("Changing file {}:".format(path))
+        logger.info("\n".join(list(unified_diff(before.splitlines(), after.splitlines(), lineterm="", fromfile="a/"+path, tofile="b/"+path))))
 
         if not args.dry_run:
             with io.open(path, 'wt', encoding='utf-8') as f:
@@ -575,39 +619,52 @@ def main(original_args=None):
 
         config.set('bumpversion', 'current_version', args.new_version)
 
-        if not args.dry_run:
-            s = StringIO()
+        s = StringIO()
 
-            try:
-                config.write(s)
+        try:
+            config.write(s)
+
+            logger.info("Writing to config file {}:".format(known_args.config_file))
+            logger.info(log_config.getvalue())
+
+            if not args.dry_run:
                 with io.open(known_args.config_file, 'wb') as f:
                     f.write(s.getvalue().encode('utf-8'))
-            except UnicodeEncodeError:
-                warnings.warn(
-                    "Unable to write UTF-8 to config file, because of an old configparser version. "
-                    "Update with `pip install --upgrade configparser`."
-                )
 
-            commit_files.append(known_args.config_file)
+        except UnicodeEncodeError:
+            warnings.warn(
+                "Unable to write UTF-8 to config file, because of an old configparser version. "
+                "Update with `pip install --upgrade configparser`."
+            )
+
+        commit_files.append(known_args.config_file)
 
     if args.commit:
 
         assert vcs.is_usable(), "Did find '{}' unusable, unable to commit.".format(vcs.__name__)
 
-        if not args.dry_run:
-            for path in commit_files:
+        logger.info("Preparing {} commit".format(vcs.__name__))
+
+        for path in commit_files:
+            logger.info("Adding changes in file {}".format(path))
+            if not args.dry_run:
                 vcs.add_path(path)
 
-            vcs_context = {
-                "current_version": args.current_version,
-                "new_version": args.new_version,
-            }
-            vcs_context.update(time_context)
-            vcs_context.update(prefixed_environ())
+        vcs_context = {
+            "current_version": args.current_version,
+            "new_version": args.new_version,
+        }
+        vcs_context.update(time_context)
+        vcs_context.update(prefixed_environ())
 
-            vcs.commit(message=args.message.format(**vcs_context))
+        commit_message = args.message.format(**vcs_context)
 
-            if args.tag:
-                vcs.tag(args.tag_name.format(**vcs_context))
+        logger.info("Creating commit with message '{}'".format(commit_message))
 
+        vcs.commit(message=commit_message)
+
+        if args.tag:
+            tag_name = args.tag_name.format(**vcs_context)
+            logger.info("Creating tag with name '{}'".format(tag_name))
+            vcs.tag(tag_name)
 
