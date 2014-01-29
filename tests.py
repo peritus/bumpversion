@@ -920,3 +920,85 @@ def test_complex_info_logging(tmpdir, capsys):
 
     assert actual_log == EXPECTED_LOG
 
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_subjunctive_dry_run_logging(tmpdir, vcs):
+    tmpdir.join("dont_touch_me.txt").write("0.8")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = dont_touch_me.txt
+        current_version = 0.8
+        commit = True
+        tag = True
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?"""))
+
+    subprocess.check_call([vcs, "init"])
+    subprocess.check_call([vcs, "add", "dont_touch_me.txt"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['patch', '--dry-run'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|Reading config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = dont_touch_me.txt
+        current_version = 0.8
+        commit = True
+        tag = True
+        serialize = 
+        	{major}.{minor}.{patch}
+        	{major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+
+        |
+        info|Parsing current version '0.8' with '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=8, patch=0|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=0, minor=8, patch=1|
+        info|Available serialization formats: '{major}.{minor}.{patch}', '{major}.{minor}'|
+        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
+        info|Could not represent 'patch' in format '{major}.{minor}'|
+        info|Selected serialization format '{major}.{minor}.{patch}'|
+        info|Serialized to '0.8.1'|
+        info|New version will be '0.8.1'|
+        info|Asserting files dont_touch_me.txt contain string '0.8':|
+        info|Found '0.8' in dont_touch_me.txt at line 0: 0.8|
+        info|Would change file dont_touch_me.txt:|
+        info|--- a/dont_touch_me.txt
+        +++ b/dont_touch_me.txt
+        @@ -1 +1 @@
+        -0.8
+        +0.8.1|
+        info|Would write to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = dont_touch_me.txt
+        current_version = 0.8
+        commit = True
+        tag = True
+        serialize = 
+        	{major}.{minor}.{patch}
+        	{major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+
+        |
+        info|Preparing Git commit|
+        info|Would add changes in file 'dont_touch_me.txt' to Git|
+        info|Would add changes in file '.bumpversion.cfg' to Git|
+        info|Would commit to Git with message 'Bump version: 0.8 \u2192 0.8.1'|
+        info|Would tag 'v0.8.1' in Git|
+        """).strip()
+
+    if vcs == "hg":
+        EXPECTED_LOG = EXPECTED_LOG.replace("Git", "Mercurial")
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert actual_log == EXPECTED_LOG
+

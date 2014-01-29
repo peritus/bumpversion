@@ -613,7 +613,10 @@ def main(original_args=None):
 
         after = before.replace(args.current_version, args.new_version)
 
-        logger.info("Changing file {}:".format(path))
+        logger.info("{} file {}:".format(
+            "Would change" if args.dry_run else "Changing",
+            path,
+        ))
         logger.info("\n".join(list(unified_diff(before.splitlines(), after.splitlines(), lineterm="", fromfile="a/"+path, tofile="b/"+path))))
 
         if not args.dry_run:
@@ -632,7 +635,10 @@ def main(original_args=None):
         try:
             config.write(s)
 
-            logger.info("Writing to config file {}:".format(known_args.config_file))
+            logger.info("{} to config file {}:".format(
+                "Would write" if args.dry_run else "Writing",
+                known_args.config_file,
+            ))
             logger.info(log_config.getvalue())
 
             if not args.dry_run:
@@ -654,7 +660,13 @@ def main(original_args=None):
         logger.info("Preparing {} commit".format(vcs.__name__))
 
         for path in commit_files:
-            logger.info("Adding changes in file {}".format(path))
+
+            logger.info("{} changes in file '{}' to {}".format(
+                "Would add" if args.dry_run else "Adding",
+                path,
+                vcs.__name__,
+            ))
+
             if not args.dry_run:
                 vcs.add_path(path)
 
@@ -667,12 +679,23 @@ def main(original_args=None):
 
         commit_message = args.message.format(**vcs_context)
 
-        logger.info("Creating commit with message '{}'".format(commit_message))
+        logger.info("{} to {} with message '{}'".format(
+            "Would commit" if args.dry_run else "Committing",
+            vcs.__name__,
+            commit_message,
+        ))
 
-        vcs.commit(message=commit_message)
+        if not args.dry_run:
+            vcs.commit(message=commit_message)
 
         if args.tag:
             tag_name = args.tag_name.format(**vcs_context)
-            logger.info("Creating tag with name '{}'".format(tag_name))
-            vcs.tag(tag_name)
+            logger.info("{} '{}' in {}".format(
+                "Would tag" if args.dry_run else "Tagging",
+                tag_name,
+                vcs.__name__
+            ))
+
+            if not args.dry_run:
+                vcs.tag(tag_name)
 
