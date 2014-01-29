@@ -179,24 +179,38 @@ files = file3
 """ == tmpdir.join(".bumpversion.cfg").read()
 
 
-def test_dry_run(tmpdir):
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_dry_run(tmpdir, vcs):
+    tmpdir.chdir()
 
     config = """[bumpversion]
-current_version: 12
-new_version: 12.2
-files: file4"""
+current_version = 12
+new_version = 12.2
+files = file4
+tag = True
+commit = True
+message = DO NOT BUMP VERSIONS WITH THIS FILE
+"""
 
     version = "12"
 
     tmpdir.join("file4").write(version)
     tmpdir.join(".bumpversion.cfg").write(config)
 
-    tmpdir.chdir()
+    subprocess.check_call([vcs, "init"])
+    subprocess.check_call([vcs, "add", "file4"])
+    subprocess.check_call([vcs, "add", ".bumpversion.cfg"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
     main(['patch', '--dry-run'])
 
     assert config == tmpdir.join(".bumpversion.cfg").read()
     assert version == tmpdir.join("file4").read()
 
+    vcs_log = subprocess.check_output([vcs, "log"]).decode('utf-8')
+
+    assert "initial commit" in vcs_log
+    assert "DO NOT" not in vcs_log
 
 def test_bump_version(tmpdir):
 
