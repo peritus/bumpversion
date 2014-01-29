@@ -27,7 +27,7 @@ import sys
 import codecs
 sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
-__VERSION__ = '0.3.8'
+__VERSION__ = '0.4.0'
 
 DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
     __VERSION__,
