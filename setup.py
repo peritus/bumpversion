@@ -11,7 +11,7 @@ setup(
     license='',
     packages=['bumpversion'],
     description=description,
-    long_description=str(open('README.rst', 'rb').read().replace(description, '')),
+    long_description=str(open('README.rst', 'rb').read()).replace(description, ''),
     entry_points={
         'console_scripts': [
             'bumpversion = bumpversion:main',
