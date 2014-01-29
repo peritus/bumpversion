@@ -1,5 +1,7 @@
 from setuptools import setup
 
+description = 'Version-bump your software with a single command!'
+
 setup(
     name='bumpversion',
     version='0.4.0',
@@ -8,8 +10,8 @@ setup(
     author_email='filip+bumpversion@j03.de',
     license='',
     packages=['bumpversion'],
-    description='Version-bump your software with a single command',
-    long_description=str(open('README.rst', 'rb').read()),
+    description=description,
+    long_description=str(open('README.rst', 'rb').read().replace(description, '')),
     entry_points={
         'console_scripts': [
             'bumpversion = bumpversion:main',
