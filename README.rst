@@ -164,8 +164,11 @@ Options
 
     bumpversion --message '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}' patch
 
-``-dry-run, -n``
+``--dry-run, -n``
   Don't touch any files, just pretend
+
+``--verbose``
+  Print useful information to stderr
 
 ``-h, --help``
   Print help and exit
