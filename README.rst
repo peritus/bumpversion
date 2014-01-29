@@ -7,12 +7,6 @@ Version-bump your software with a single command!
 bumpversion updates all version strings in your source tree by the correct
 increment, commits that change to git or Mercurial and tags it.
 
-.. image:: https://pypip.in/v/bumpversion/badge.png
-  :target: https://pypi.python.org/pypi/bumpversion
-
-.. image:: https://pypip.in/d/bumpversion/badge.png
-  :target: https://pypi.python.org/pypi/bumpversion
-
 .. image:: https://travis-ci.org/peritus/bumpversion.png?branch=master
   :target: https://travis-ci.org/peritus/bumpversion
 
