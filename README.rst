@@ -181,8 +181,9 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
-**v0.4.0 (unreleased)**
+**v0.4.0**
 
+- Add --verbose option (`#21 <https://github.com/peritus/bumpversion/issues/21>`_ `#30 <https://github.com/peritus/bumpversion/issues/30>`_)
 - Allow option --serialize multiple times
 
 **v0.3.8**
