@@ -989,7 +989,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
 
         |
-        info|Preparing Git commit|
+        info|Would prepare Git commit|
         info|Would add changes in file 'dont_touch_me.txt' to Git|
         info|Would add changes in file '.bumpversion.cfg' to Git|
         info|Would commit to Git with message 'Bump version: 0.8 \u2192 0.8.1'|
@@ -1002,4 +1002,75 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
     actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
 
     assert actual_log == EXPECTED_LOG
+
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
+    tmpdir.join("please_touch_me.txt").write("0.3.3")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = please_touch_me.txt
+        current_version = 0.3.3
+        commit = False
+        tag = False
+        """))
+
+    subprocess.check_call([vcs, "init"])
+    subprocess.check_call([vcs, "add", "please_touch_me.txt"])
+    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['patch'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|Reading config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = please_touch_me.txt
+        current_version = 0.3.3
+        commit = False
+        tag = False
+        
+        |
+        info|Parsing current version '0.3.3' with '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=0, minor=3, patch=3|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=0, minor=3, patch=4|
+        info|Available serialization formats: '{major}.{minor}.{patch}'|
+        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
+        info|Selected serialization format '{major}.{minor}.{patch}'|
+        info|Serialized to '0.3.4'|
+        info|New version will be '0.3.4'|
+        info|Asserting files please_touch_me.txt contain string '0.3.3':|
+        info|Found '0.3.3' in please_touch_me.txt at line 0: 0.3.3|
+        info|Changing file please_touch_me.txt:|
+        info|--- a/please_touch_me.txt
+        +++ b/please_touch_me.txt
+        @@ -1 +1 @@
+        -0.3.3
+        +0.3.4|
+        info|Writing to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = please_touch_me.txt
+        current_version = 0.3.3
+        commit = False
+        tag = False
+        
+        |
+        info|Would prepare Git commit|
+        info|Would add changes in file 'please_touch_me.txt' to Git|
+        info|Would add changes in file '.bumpversion.cfg' to Git|
+        info|Would commit to Git with message 'Bump version: 0.3.3 \u2192 0.3.4'|
+        info|Would tag 'v0.3.4' in Git|
+        """).strip()
+
+    if vcs == "hg":
+        EXPECTED_LOG = EXPECTED_LOG.replace("Git", "Mercurial")
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert actual_log == EXPECTED_LOG
+
 

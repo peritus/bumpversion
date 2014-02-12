@@ -591,6 +591,8 @@ def main(original_args=None):
         if vcs.is_usable():
             vcs.assert_nondirty()
             break
+        else:
+            vcs = None
 
     # make sure files exist and contain version string
 
@@ -656,49 +658,54 @@ def main(original_args=None):
 
         commit_files.append(known_args.config_file)
 
-    if args.commit:
+    if not vcs:
+        return
 
-        assert vcs.is_usable(), "Did find '{}' unusable, unable to commit.".format(vcs.__name__)
+    assert vcs.is_usable(), "Did find '{}' unusable, unable to commit.".format(vcs.__name__)
 
-        logger.info("Preparing {} commit".format(vcs.__name__))
+    do_commit = (not args.dry_run) and args.commit
+    do_tag = (not args.dry_run) and args.tag
 
-        for path in commit_files:
+    logger.info("{} {} commit".format(
+        "Would prepare" if not do_commit else "Preparing",
+        vcs.__name__,
+    ))
 
-            logger.info("{} changes in file '{}' to {}".format(
-                "Would add" if args.dry_run else "Adding",
-                path,
-                vcs.__name__,
-            ))
-
-            if not args.dry_run:
-                vcs.add_path(path)
-
-        vcs_context = {
-            "current_version": args.current_version,
-            "new_version": args.new_version,
-        }
-        vcs_context.update(time_context)
-        vcs_context.update(prefixed_environ())
-
-        commit_message = args.message.format(**vcs_context)
-
-        logger.info("{} to {} with message '{}'".format(
-            "Would commit" if args.dry_run else "Committing",
+    for path in commit_files:
+        logger.info("{} changes in file '{}' to {}".format(
+            "Would add" if not do_commit else "Adding",
+            path,
             vcs.__name__,
-            commit_message,
         ))
 
-        if not args.dry_run:
-            vcs.commit(message=commit_message)
+        if do_commit:
+            vcs.add_path(path)
 
-        if args.tag:
-            tag_name = args.tag_name.format(**vcs_context)
-            logger.info("{} '{}' in {}".format(
-                "Would tag" if args.dry_run else "Tagging",
-                tag_name,
-                vcs.__name__
-            ))
+    vcs_context = {
+        "current_version": args.current_version,
+        "new_version": args.new_version,
+    }
+    vcs_context.update(time_context)
+    vcs_context.update(prefixed_environ())
 
-            if not args.dry_run:
-                vcs.tag(tag_name)
+    commit_message = args.message.format(**vcs_context)
+
+    logger.info("{} to {} with message '{}'".format(
+        "Would commit" if not do_commit else "Committing",
+        vcs.__name__,
+        commit_message,
+    ))
+
+    if do_commit:
+        vcs.commit(message=commit_message)
+
+    tag_name = args.tag_name.format(**vcs_context)
+    logger.info("{} '{}' in {}".format(
+        "Would tag" if not do_tag else "Tagging",
+        tag_name,
+        vcs.__name__
+    ))
+
+    if do_tag:
+        vcs.tag(tag_name)
 
