@@ -22,6 +22,7 @@ import io
 from string import Formatter
 from datetime import datetime
 from difflib import unified_diff
+from tempfile import NamedTemporaryFile
 
 import sys
 import codecs
@@ -55,6 +56,14 @@ class DiscardDefaultIfSpecifiedAppendAction(_AppendAction):
 class BaseVCS(object):
 
     @classmethod
+    def commit(cls, message):
+        f = NamedTemporaryFile('wb', delete=False)
+        f.write(message.encode('utf-8'))
+        f.close()
+        subprocess.check_output(cls._COMMIT_COMMAND + [f.name], env={'HGENCODING': 'utf-8'})
+        os.unlink(f.name)
+
+    @classmethod
     def is_usable(cls):
         try:
             return subprocess.call(
@@ -72,6 +81,7 @@ class BaseVCS(object):
 class Git(BaseVCS):
 
     _TEST_USABLE_COMMAND = ["git", "rev-parse", "--git-dir"]
+    _COMMIT_COMMAND = ["git", "commit", "-F"]
 
     @classmethod
     def assert_nondirty(cls):
@@ -127,10 +137,6 @@ class Git(BaseVCS):
         subprocess.check_output(["git", "add", "--update", path])
 
     @classmethod
-    def commit(cls, message):
-        subprocess.check_output(["git", "commit", "-m", message.encode('utf-8')])
-
-    @classmethod
     def tag(cls, name):
         subprocess.check_output(["git", "tag", name])
 
@@ -138,6 +144,7 @@ class Git(BaseVCS):
 class Mercurial(BaseVCS):
 
     _TEST_USABLE_COMMAND = ["hg", "root"]
+    _COMMIT_COMMAND = ["hg", "commit", "--logfile"]
 
     @classmethod
     def latest_tag_info(cls):
@@ -159,10 +166,6 @@ class Mercurial(BaseVCS):
     @classmethod
     def add_path(cls, path):
         pass
-
-    @classmethod
-    def commit(cls, message):
-        subprocess.check_output(["hg", "commit", "-m", message.encode('utf-8')])
 
     @classmethod
     def tag(cls, name):
