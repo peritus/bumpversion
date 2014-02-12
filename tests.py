@@ -13,18 +13,21 @@ from os import curdir, makedirs, chdir, environ
 from os.path import join, curdir, dirname
 from shlex import split as shlex_split
 from textwrap import dedent
+from functools import partial
 
 from bumpversion import main, DESCRIPTION
 
-environ['HGENCODING'] = 'UTF-8'
+call = partial(subprocess.call, env={'HGENCODING': 'utf-8'})
+check_call = partial(subprocess.check_call, env={'HGENCODING': 'utf-8'})
+check_output = partial(subprocess.check_output, env={'HGENCODING': 'utf-8'})
 
 xfail_if_no_git = pytest.mark.xfail(
-  subprocess.call(["git", "--help"], shell=True) != 1,
+  call(["git", "--help"], shell=True) != 1,
   reason="git is not installed"
 )
 
 xfail_if_no_hg = pytest.mark.xfail(
-  subprocess.call(["hg", "--help"], shell=True) != 0,
+  call(["hg", "--help"], shell=True) != 0,
   reason="hg is not installed"
 )
 
@@ -91,10 +94,10 @@ def test_usage_string(tmpdir, capsys):
 def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     tmpdir.chdir()
     tmpdir.join("somesource.txt").write("1.7.2013")
-    subprocess.check_call([vcs, "init"])
-    subprocess.check_call([vcs, "add", "somesource.txt"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
-    subprocess.check_call([vcs, "tag", "v1.7.2013"])
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "somesource.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "tag", "v1.7.2013"])
 
     with pytest.raises(SystemExit):
         main(['--help'])
@@ -209,17 +212,17 @@ message = DO NOT BUMP VERSIONS WITH THIS FILE
     tmpdir.join("file4").write(version)
     tmpdir.join(".bumpversion.cfg").write(config)
 
-    subprocess.check_call([vcs, "init"])
-    subprocess.check_call([vcs, "add", "file4"])
-    subprocess.check_call([vcs, "add", ".bumpversion.cfg"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "file4"])
+    check_call([vcs, "add", ".bumpversion.cfg"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['patch', '--dry-run'])
 
     assert config == tmpdir.join(".bumpversion.cfg").read()
     assert version == tmpdir.join("file4").read()
 
-    vcs_log = subprocess.check_output([vcs, "log"]).decode('utf-8')
+    vcs_log = check_output([vcs, "log"]).decode('utf-8')
 
     assert "initial commit" in vcs_log
     assert "DO NOT" not in vcs_log
@@ -294,10 +297,10 @@ def test_bumpversion_serialize_only_parts(tmpdir):
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_dirty_workdir(tmpdir, vcs):
     tmpdir.chdir()
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("dirty").write("i'm dirty")
 
-    subprocess.check_call([vcs, "add", "dirty"])
+    check_call([vcs, "add", "dirty"])
 
     with pytest.raises(AssertionError):
         main(['patch', '--current-version', '1', '--new-version', '2', 'file7'])
@@ -314,22 +317,22 @@ def test_bump_major(tmpdir):
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_commit_and_tag(tmpdir, vcs):
     tmpdir.chdir()
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("47.1.1")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['patch', '--current-version', '47.1.1', '--commit', 'VERSION'])
 
     assert '47.1.2' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+    log = check_output([vcs, "log", "-p"]).decode("utf-8")
 
     assert '-47.1.1' in log
     assert '+47.1.2' in log
     assert 'Bump version: 47.1.1 → 47.1.2' in log
 
-    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'v47.1.2' not in tag_out
 
@@ -337,9 +340,9 @@ def test_commit_and_tag(tmpdir, vcs):
 
     assert '47.1.3' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output([vcs, "log", "-p"])
+    log = check_output([vcs, "log", "-p"])
 
-    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'v47.1.3' in tag_out
 
@@ -350,22 +353,22 @@ def test_commit_and_tag_with_configfile(tmpdir, vcs):
 
     tmpdir.join(".bumpversion.cfg").write("""[bumpversion]\ncommit = True\ntag = True""")
 
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("48.1.1")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['patch', '--current-version', '48.1.1', '--no-tag', 'VERSION'])
 
     assert '48.1.2' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+    log = check_output([vcs, "log", "-p"]).decode("utf-8")
 
     assert '-48.1.1' in log
     assert '+48.1.2' in log
     assert 'Bump version: 48.1.1 → 48.1.2' in log
 
-    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'v48.1.2' not in tag_out
 
@@ -373,9 +376,9 @@ def test_commit_and_tag_with_configfile(tmpdir, vcs):
 
     assert '48.1.3' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output([vcs, "log", "-p"])
+    log = check_output([vcs, "log", "-p"])
 
-    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'v48.1.3' in tag_out
 
@@ -391,22 +394,22 @@ def test_commit_and_not_tag_with_configfile(tmpdir, vcs, config):
 
     tmpdir.join(".bumpversion.cfg").write(config)
 
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("48.1.1")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['patch', '--current-version', '48.1.1', 'VERSION'])
 
     assert '48.1.2' == tmpdir.join("VERSION").read()
 
-    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+    log = check_output([vcs, "log", "-p"]).decode("utf-8")
 
     assert '-48.1.1' in log
     assert '+48.1.2' in log
     assert 'Bump version: 48.1.1 → 48.1.2' in log
 
-    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'v48.1.2' not in tag_out
 
@@ -420,19 +423,19 @@ current_version: 10.0.0
 commit = False
 tag = False""")
 
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("trackedfile").write("10.0.0")
-    subprocess.check_call([vcs, "add", "trackedfile"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "trackedfile"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['patch', 'trackedfile'])
 
     assert '10.0.1' == tmpdir.join("trackedfile").read()
 
-    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+    log = check_output([vcs, "log", "-p"]).decode("utf-8")
     assert "10.0.1" not in log
 
-    diff = subprocess.check_output([vcs, "diff"]).decode("utf-8")
+    diff = check_output([vcs, "diff"]).decode("utf-8")
     assert "10.0.1" in diff
 
 
@@ -444,19 +447,19 @@ def test_commit_configfile_true_cli_false_override(tmpdir, vcs):
 current_version: 27.0.0
 commit = True""")
 
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("dontcommitfile").write("27.0.0")
-    subprocess.check_call([vcs, "add", "dontcommitfile"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "dontcommitfile"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['patch', '--no-commit', 'dontcommitfile'])
 
     assert '27.0.1' == tmpdir.join("dontcommitfile").read()
 
-    log = subprocess.check_output([vcs, "log", "-p"]).decode("utf-8")
+    log = check_output([vcs, "log", "-p"]).decode("utf-8")
     assert "27.0.1" not in log
 
-    diff = subprocess.check_output([vcs, "diff"]).decode("utf-8")
+    diff = check_output([vcs, "diff"]).decode("utf-8")
     assert "27.0.1" in diff
 
 
@@ -482,10 +485,10 @@ def test_current_version_from_tag(tmpdir, vcs):
     # prepare
     tmpdir.join("update_from_tag").write("26.6.0")
     tmpdir.chdir()
-    subprocess.check_call(["git", "init"])
-    subprocess.check_call(["git", "add", "update_from_tag"])
-    subprocess.check_call(["git", "commit", "-m", "initial"])
-    subprocess.check_call(["git", "tag", "v26.6.0"])
+    check_call(["git", "init"])
+    check_call(["git", "add", "update_from_tag"])
+    check_call(["git", "commit", "-m", "initial"])
+    check_call(["git", "tag", "v26.6.0"])
 
     # don't give current-version, that should come from tag
     main(['patch', 'update_from_tag'])
@@ -501,10 +504,10 @@ def test_current_version_from_tag_written_to_config_file(tmpdir, vcs):
 
     tmpdir.join(".bumpversion.cfg").write("""[bumpversion]""")
 
-    subprocess.check_call(["git", "init"])
-    subprocess.check_call(["git", "add", "updated_also_in_config_file"])
-    subprocess.check_call(["git", "commit", "-m", "initial"])
-    subprocess.check_call(["git", "tag", "v14.6.0"])
+    check_call(["git", "init"])
+    check_call(["git", "add", "updated_also_in_config_file"])
+    check_call(["git", "commit", "-m", "initial"])
+    check_call(["git", "tag", "v14.6.0"])
 
     # don't give current-version, that should come from tag
     main([
@@ -524,13 +527,13 @@ def test_distance_to_latest_tag_as_part_of_new_version(tmpdir, vcs):
     tmpdir.join("mysourcefile").write("19.6.0")
     tmpdir.chdir()
 
-    subprocess.check_call(["git", "init"])
-    subprocess.check_call(["git", "add", "mysourcefile"])
-    subprocess.check_call(["git", "commit", "-m", "initial"])
-    subprocess.check_call(["git", "tag", "v19.6.0"])
-    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 1"])
-    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 2"])
-    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 3"])
+    check_call(["git", "init"])
+    check_call(["git", "add", "mysourcefile"])
+    check_call(["git", "commit", "-m", "initial"])
+    check_call(["git", "tag", "v19.6.0"])
+    check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 1"])
+    check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 2"])
+    check_call(["git", "commit", "--allow-empty", "-m", "Just a commit 3"])
 
     # don't give current-version, that should come from tag
     main([
@@ -548,17 +551,17 @@ def test_override_vcs_current_version(tmpdir, vcs):
     # prepare
     tmpdir.join("contains_actual_version").write("6.7.8")
     tmpdir.chdir()
-    subprocess.check_call(["git", "init"])
-    subprocess.check_call(["git", "add", "contains_actual_version"])
-    subprocess.check_call(["git", "commit", "-m", "initial"])
-    subprocess.check_call(["git", "tag", "v6.7.8"])
+    check_call(["git", "init"])
+    check_call(["git", "add", "contains_actual_version"])
+    check_call(["git", "commit", "-m", "initial"])
+    check_call(["git", "tag", "v6.7.8"])
 
     # update file
     tmpdir.join("contains_actual_version").write("7.0.0")
-    subprocess.check_call(["git", "add", "contains_actual_version"])
+    check_call(["git", "add", "contains_actual_version"])
 
     # but forgot to tag or forgot to push --tags
-    subprocess.check_call(["git", "commit", "-m", "major release"])
+    check_call(["git", "commit", "-m", "major release"])
 
     # if we don't give current-version here we get
     # "AssertionError: Did not find string 6.7.8 in file contains_actual_version"
@@ -588,12 +591,12 @@ def test_read_version_tags_only(tmpdir, vcs):
     # prepare
     tmpdir.join("update_from_tag").write("29.6.0")
     tmpdir.chdir()
-    subprocess.check_call(["git", "init"])
-    subprocess.check_call(["git", "add", "update_from_tag"])
-    subprocess.check_call(["git", "commit", "-m", "initial"])
-    subprocess.check_call(["git", "tag", "v29.6.0"])
-    subprocess.check_call(["git", "commit", "--allow-empty", "-m", "a commit"])
-    subprocess.check_call(["git", "tag", "jenkins-deploy-myproject-2"])
+    check_call(["git", "init"])
+    check_call(["git", "add", "update_from_tag"])
+    check_call(["git", "commit", "-m", "initial"])
+    check_call(["git", "tag", "v29.6.0"])
+    check_call(["git", "commit", "--allow-empty", "-m", "a commit"])
+    check_call(["git", "tag", "jenkins-deploy-myproject-2"])
 
     # don't give current-version, that should come from tag
     main(['patch', 'update_from_tag'])
@@ -604,14 +607,14 @@ def test_read_version_tags_only(tmpdir, vcs):
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_tag_name(tmpdir, vcs):
     tmpdir.chdir()
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("31.1.1")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     main(['patch', '--current-version', '31.1.1', '--commit', '--tag', 'VERSION', '--tag-name', 'ReleasedVersion-{new_version}'])
 
-    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'ReleasedVersion-31.1.2' in tag_out
 
@@ -619,10 +622,10 @@ def test_tag_name(tmpdir, vcs):
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_message_from_config_file(tmpdir, capsys, vcs):
     tmpdir.chdir()
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("400.0.0")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
 current_version: 400.0.0
@@ -634,11 +637,11 @@ tag_name: from-{current_version}-to-{new_version}""")
 
     main(['major', 'VERSION'])
 
-    log = subprocess.check_output([vcs, "log", "-p"])
+    log = check_output([vcs, "log", "-p"])
 
     assert b'400.0.0 was old, 401.0.0 is new' in log
 
-    tag_out = subprocess.check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
 
     assert b'from-400.0.0-to-401.0.0' in tag_out
 
@@ -654,10 +657,10 @@ except ImportError:
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_utf8_message_from_config_file(tmpdir, capsys, vcs):
     tmpdir.chdir()
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("500.0.0")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     initial_config = """[bumpversion]
 current_version = 500.0.0
@@ -668,7 +671,7 @@ message = Nová verze: {current_version} ☃, {new_version} ☀
 
     tmpdir.join(".bumpversion.cfg").write(initial_config.encode('utf-8'), mode='wb')
     main(['major', 'VERSION'])
-    log = subprocess.check_output([vcs, "log", "-p"])
+    log = check_output([vcs, "log", "-p"])
     expected_new_config = initial_config.replace('500', '501')
     assert expected_new_config.encode('utf-8') == tmpdir.join(".bumpversion.cfg").read(mode='rb')
 
@@ -676,10 +679,10 @@ message = Nová verze: {current_version} ☃, {new_version} ☀
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_utf8_message_from_config_file(tmpdir, capsys, vcs):
     tmpdir.chdir()
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("10.10.0")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     initial_config = """[bumpversion]
 current_version = 10.10.0
@@ -691,7 +694,7 @@ message = [{now}] [{utcnow} {utcnow:%YXX%mYY%d}]
 
     main(['major', 'VERSION'])
 
-    log = subprocess.check_output([vcs, "log", "-p"])
+    log = check_output([vcs, "log", "-p"])
 
     assert b'[20' in log
     assert b'] [' in log
@@ -701,10 +704,10 @@ message = [{now}] [{utcnow} {utcnow:%YXX%mYY%d}]
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_commit_and_tag_from_below_vcs_root(tmpdir, vcs, monkeypatch):
     tmpdir.chdir()
-    subprocess.check_call([vcs, "init"])
+    check_call([vcs, "init"])
     tmpdir.join("VERSION").write("30.0.3")
-    subprocess.check_call([vcs, "add", "VERSION"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     tmpdir.mkdir("subdir")
     monkeypatch.chdir(tmpdir.join("subdir"))
@@ -937,9 +940,9 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
           {major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?"""))
 
-    subprocess.check_call([vcs, "init"])
-    subprocess.check_call([vcs, "add", "dont_touch_me.txt"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "dont_touch_me.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     with mock.patch("bumpversion.logger") as logger:
         main(['patch', '--dry-run'])
@@ -1017,9 +1020,9 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         tag = False
         """))
 
-    subprocess.check_call([vcs, "init"])
-    subprocess.check_call([vcs, "add", "please_touch_me.txt"])
-    subprocess.check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "please_touch_me.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
 
     with mock.patch("bumpversion.logger") as logger:
         main(['patch'])
