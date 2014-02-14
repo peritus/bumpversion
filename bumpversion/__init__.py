@@ -60,7 +60,9 @@ class BaseVCS(object):
         f = NamedTemporaryFile('wb', delete=False)
         f.write(message.encode('utf-8'))
         f.close()
-        subprocess.check_output(cls._COMMIT_COMMAND + [f.name], env={'HGENCODING': 'utf-8'})
+        subprocess.check_output(cls._COMMIT_COMMAND + [f.name], env=dict(
+            list(os.environ.items()) + [('HGENCODING', 'utf-8')]
+        ))
         os.unlink(f.name)
 
     @classmethod
