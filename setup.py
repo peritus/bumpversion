@@ -1,4 +1,7 @@
 from setuptools import setup
+import os
+
+del os.link
 
 description = 'Version-bump your software with a single command!'
 
