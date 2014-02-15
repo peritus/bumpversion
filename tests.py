@@ -39,8 +39,9 @@ def _mock_calls_to_string(called_mock):
 EXPECTED_USAGE = ("""
 usage: py.test [-h] [--config-file FILE] [--verbose] [--parse REGEX]
                [--serialize FORMAT] [--current-version VERSION] [--dry-run]
-               --new-version VERSION [--commit | --no-commit]
-               [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
+               --new-version VERSION [--machine-readable]
+               [--commit | --no-commit] [--tag | --no-tag]
+               [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part [file [file ...]]
 
 %s
@@ -64,6 +65,8 @@ optional arguments:
   --new-version VERSION
                         New version that should be in the files (default:
                         None)
+  --machine-readable    Output machine readable information stdout. (default:
+                        False)
   --commit              Commit to version control (default: False)
   --no-commit           Do not commit to version control
   --tag                 Create a tag in version control (default: False)
@@ -1003,3 +1006,18 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
 
     assert actual_log == EXPECTED_LOG
 
+def test_machine_readable_output(tmpdir, capsys):
+
+    tmpdir.join("file_machine_readable").write("1.0.0")
+    tmpdir.chdir()
+
+    main(['patch', 'file_machine_readable', '--machine-readable', '--dry-run', '--current-version', '1.0.0'])
+    
+    out, err = capsys.readouterr()
+    expected_output = [
+        'current_version=1.0.0',
+        'new_version=1.0.1',
+        'dry_run=True'
+    ]
+    assert err == ""
+    assert out == '{}\r\n'.format('\r\n'.join(expected_output))

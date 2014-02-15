@@ -226,6 +226,7 @@ class Version(object):
             raise e
 
         self.serialize_formats = serialize_formats
+        self.labels = { label for label in self.order() }
 
         if not context:
             context = {}
@@ -514,8 +515,10 @@ def main(original_args=None):
     if not 'new_version' in defaults and known_args.current_version:
         v.parse(known_args.current_version)
 
-        if len(positionals) > 0:
-            v.bump(positionals[0])
+        for positional in positionals:
+            if positional in v.labels:
+                v.bump(positional)
+                break
 
         try:
             defaults['new_version'] = v.serialize()
@@ -543,6 +546,8 @@ def main(original_args=None):
     parser3.add_argument('--new-version', metavar='VERSION',
                          help='New version that should be in the files',
                          required=not 'new_version' in defaults)
+    parser3.add_argument('--machine-readable', action='store_true', default=False,
+                         help='Output machine readable information stdout.')
 
     commitgroup = parser3.add_mutually_exclusive_group()
 
@@ -702,3 +707,11 @@ def main(original_args=None):
             if not args.dry_run:
                 vcs.tag(tag_name)
 
+    if args.machine_readable:
+        lines = [
+            'current_version={}'.format(known_args.current_version),
+            'new_version={}'.format(defaults['new_version']),
+            'dry_run={}'.format(args.dry_run)
+        ]
+        sys.stdout.write('\r\n'.join(lines))
+        sys.stdout.write('\r\n')
