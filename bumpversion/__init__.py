@@ -414,13 +414,13 @@ def main(original_args=None):
         help='Config file to read most of the variables from', required=False)
 
     parser1.add_argument(
-        '--verbose', action='count', default=0,
-        help='Print verbose logging to stderr', required=False)
+        '--verbose', action='count', default=False,
+        help='Print verbose logging to stdout', required=False)
 
     known_args, remaining_argv = parser1.parse_known_args(args)
 
     if len(logger.handlers) == 0:
-        ch = logging.StreamHandler(sys.stderr)
+        ch = logging.StreamHandler(sys.stdout)
         logformatter = logging.Formatter('%(message)s')
         ch.setFormatter(logformatter)
         logger.addHandler(ch)
