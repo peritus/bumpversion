@@ -26,7 +26,9 @@ from tempfile import NamedTemporaryFile
 
 import sys
 import codecs
-sys.stdout = codecs.getwriter('utf8')(sys.stdout)
+
+if sys.version_info[0] == 2:
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
 __VERSION__ = '0.4.0'
 

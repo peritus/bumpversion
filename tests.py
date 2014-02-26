@@ -93,6 +93,15 @@ def test_usage_string(tmpdir, capsys):
     assert err == ""
     assert out == EXPECTED_USAGE, "Usage string changed to \n\n\n{}\n\n\n".format(out)
 
+def test_usage_string_fork(tmpdir, capsys):
+    tmpdir.chdir()
+
+    out = check_output('bumpversion --help; exit 0', shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+
+    if not 'usage: bumpversion [-h]' in out:
+        print(out)
+
+    assert 'usage: bumpversion [-h]' in out
 
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_regression_help_in_workdir(tmpdir, capsys, vcs):
