@@ -822,6 +822,11 @@ def test_log_no_config_file_info_message(tmpdir, capsys):
         @@ -1 +1 @@
         -1.0.0
         +1.0.1|
+        info|Would write to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        current_version = 1.0.1
+
+        |
     """).strip()
 
     assert actual_log == EXPECTED_LOG
@@ -845,6 +850,11 @@ def test_log_parse_doesnt_parse_current_version(tmpdir):
         info|Opportunistic finding of new_version failed|
         info|New version will be '13'|
         info|Asserting files  contain string '12':|
+        info|Would write to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        current_version = 13
+
+        |
     """).strip()
 
     assert actual_log == EXPECTED_LOG

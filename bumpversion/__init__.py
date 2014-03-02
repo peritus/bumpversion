@@ -449,15 +449,19 @@ def main(original_args=None):
     if 'current_version' in vcs_info:
         defaults['current_version'] = vcs_info['current_version']
 
-    config = None
-    if os.path.exists(known_args.config_file):
-        config = RawConfigParser()
+    config = RawConfigParser('')
+    config.add_section('bumpversion')
+
+    config_file_exists = os.path.exists(known_args.config_file)
+
+    if config_file_exists:
+
         config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
 
         log_config = StringIO()
         config.write(log_config)
-        logger.info("Reading config file {}:".format(known_args.config_file))
 
+        logger.info("Reading config file {}:".format(known_args.config_file))
         logger.info(log_config.getvalue())
 
         defaults.update(dict(config.items("bumpversion")))
@@ -635,32 +639,34 @@ def main(original_args=None):
 
     commit_files = files
 
-    if config:
-        config.remove_option('bumpversion', 'new_version')
+    config.remove_option('bumpversion', 'new_version')
 
-        config.set('bumpversion', 'current_version', args.new_version)
+    config.set('bumpversion', 'current_version', args.new_version)
 
-        s = StringIO()
+    new_config = StringIO()
 
-        try:
-            config.write(s)
+    try:
+        write_to_config_file = (not args.dry_run) and config_file_exists
 
-            logger.info("{} to config file {}:".format(
-                "Would write" if args.dry_run else "Writing",
-                known_args.config_file,
-            ))
-            logger.info(s.getvalue())
+        logger.info("{} to config file {}:".format(
+            "Would write" if not write_to_config_file else "Writing",
+            known_args.config_file,
+        ))
 
-            if not args.dry_run:
-                with io.open(known_args.config_file, 'wb') as f:
-                    f.write(s.getvalue().encode('utf-8'))
+        config.write(new_config)
+        logger.info(new_config.getvalue())
 
-        except UnicodeEncodeError:
-            warnings.warn(
-                "Unable to write UTF-8 to config file, because of an old configparser version. "
-                "Update with `pip install --upgrade configparser`."
-            )
+        if write_to_config_file:
+            with io.open(known_args.config_file, 'wb') as f:
+                f.write(new_config.getvalue().encode('utf-8'))
 
+    except UnicodeEncodeError:
+        warnings.warn(
+            "Unable to write UTF-8 to config file, because of an old configparser version. "
+            "Update with `pip install --upgrade configparser`."
+        )
+
+    if config_file_exists:
         commit_files.append(known_args.config_file)
 
     if not vcs:
