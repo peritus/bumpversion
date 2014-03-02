@@ -631,7 +631,13 @@ def main(original_args=None):
             "Would change" if args.dry_run else "Changing",
             path,
         ))
-        logger.info("\n".join(list(unified_diff(before.splitlines(), after.splitlines(), lineterm="", fromfile="a/"+path, tofile="b/"+path))))
+        logger.info("\n".join(list(unified_diff(
+            before.splitlines(),
+            after.splitlines(),
+            lineterm="",
+            fromfile="a/"+path,
+            tofile="b/"+path
+        ))))
 
         if not args.dry_run:
             with io.open(path, 'wt', encoding='utf-8') as f:
