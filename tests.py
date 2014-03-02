@@ -914,7 +914,7 @@ def test_complex_info_logging(tmpdir, capsys):
         info|Writing to config file .bumpversion.cfg:|
         info|[bumpversion]
         files = fileE
-        current_version = 0.4
+        current_version = 0.4.1
         serialize = 
         	{major}.{minor}.{patch}
         	{major}.{minor}
@@ -987,7 +987,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         info|Would write to config file .bumpversion.cfg:|
         info|[bumpversion]
         files = dont_touch_me.txt
-        current_version = 0.8
+        current_version = 0.8.1
         commit = True
         tag = True
         serialize = 
@@ -1061,7 +1061,7 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         info|Writing to config file .bumpversion.cfg:|
         info|[bumpversion]
         files = please_touch_me.txt
-        current_version = 0.3.3
+        current_version = 0.3.4
         commit = False
         tag = False
         

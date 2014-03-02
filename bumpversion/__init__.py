@@ -649,7 +649,7 @@ def main(original_args=None):
                 "Would write" if args.dry_run else "Writing",
                 known_args.config_file,
             ))
-            logger.info(log_config.getvalue())
+            logger.info(s.getvalue())
 
             if not args.dry_run:
                 with io.open(known_args.config_file, 'wb') as f:
