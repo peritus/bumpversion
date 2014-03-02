@@ -38,7 +38,8 @@ DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
 )
 
 import logging
-logger = logging.getLogger("bumpversion")
+logger = logging.getLogger("bumpversion.logger")
+logger_list = logging.getLogger("bumpversion.list")
 
 from argparse import _AppendAction
 class DiscardDefaultIfSpecifiedAppendAction(_AppendAction):
@@ -423,13 +424,24 @@ def main(original_args=None):
         '--verbose', action='count', default=0,
         help='Print verbose logging to stderr', required=False)
 
+    parser1.add_argument(
+        '--list', action='store_true', default=False,
+        help='List machine readable information', required=False)
+
     known_args, remaining_argv = parser1.parse_known_args(args)
+
+    logformatter = logging.Formatter('%(message)s')
 
     if len(logger.handlers) == 0:
         ch = logging.StreamHandler(sys.stderr)
-        logformatter = logging.Formatter('%(message)s')
         ch.setFormatter(logformatter)
         logger.addHandler(ch)
+
+    if len(logger_list.handlers) == 0:
+        ch2 = logging.StreamHandler(sys.stdout)
+        ch2.setFormatter(logformatter)
+        logger_list.addHandler(ch2)
+        logger_list.setLevel(1)
 
     log_level = {
         0: logging.WARNING,
@@ -646,6 +658,11 @@ def main(original_args=None):
                 f.write(after)
 
     commit_files = files
+
+    config.set('bumpversion', 'new_version', args.new_version)
+
+    for key, value in config.items('bumpversion'):
+        logger_list.info("{}={}".format(key, value))
 
     config.remove_option('bumpversion', 'new_version')
 

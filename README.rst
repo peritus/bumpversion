@@ -170,6 +170,17 @@ Options
 ``--verbose``
   Print useful information to stderr
 
+``--list``
+  List machine readable information to stdout for consumption by other
+  programs.
+
+  Example:
+
+  ```
+  current_version=0.0.18
+  new_version=0.0.19
+  ```
+
 ``-h, --help``
   Print help and exit
 

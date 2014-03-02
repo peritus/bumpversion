@@ -44,7 +44,7 @@ def _mock_calls_to_string(called_mock):
 
 
 EXPECTED_USAGE = ("""
-usage: py.test [-h] [--config-file FILE] [--verbose] [--parse REGEX]
+usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--parse REGEX]
                [--serialize FORMAT] [--current-version VERSION] [--dry-run]
                --new-version VERSION [--commit | --no-commit]
                [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
@@ -61,6 +61,7 @@ optional arguments:
   --config-file FILE    Config file to read most of the variables from
                         (default: .bumpversion.cfg)
   --verbose             Print verbose logging to stderr (default: 0)
+  --list                List machine readable information (default: False)
   --parse REGEX         Regex parsing the version string (default:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
@@ -118,7 +119,7 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     out, err = capsys.readouterr()
 
     if vcs == "git":
-        assert "usage: py.test [-h] [--config-file FILE] [--verbose] [--parse REGEX]" in out
+        assert "usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--parse REGEX]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
         assert "[--new-version VERSION]" in out
     else:
@@ -1100,3 +1101,38 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
     assert actual_log == EXPECTED_LOG
 
 
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_listing(tmpdir, vcs):
+    tmpdir.join("please_list_me.txt").write("0.5.5")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = please_list_me.txt
+        current_version = 0.5.5
+        commit = False
+        tag = False
+        """))
+
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "please_list_me.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    with mock.patch("bumpversion.logger_list") as logger:
+        main(['--list', 'patch'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|files=please_list_me.txt|
+        info|current_version=0.5.5|
+        info|commit=False|
+        info|tag=False|
+        info|new_version=0.5.6|
+        """).strip()
+
+    if vcs == "hg":
+        EXPECTED_LOG = EXPECTED_LOG.replace("Git", "Mercurial")
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[3:])
+
+    assert actual_log == EXPECTED_LOG
