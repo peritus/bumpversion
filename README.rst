@@ -174,12 +174,10 @@ Options
   List machine readable information to stdout for consumption by other
   programs.
 
-  Example:
+  Example::
 
-  ```
-  current_version=0.0.18
-  new_version=0.0.19
-  ```
+    current_version=0.0.18
+    new_version=0.0.19
 
 ``-h, --help``
   Print help and exit
