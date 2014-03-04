@@ -194,7 +194,7 @@ Changes
 
 - Add --list option (`#39 <https://github.com/peritus/bumpversion/issues/39>`_)
 - Use temporary files for handing over commit/tag messages to git/hg (`#36 <https://github.com/peritus/bumpversion/issues/36>`_)
-- Fix: don't encode stdout as utf-8 on py3 (`#40 <https://github.com/peritus/bumpversion/issues/40>`)
+- Fix: don't encode stdout as utf-8 on py3 (`#40 <https://github.com/peritus/bumpversion/issues/40>`_)
 - Fix: logging of content of config file was wrong
 
 **v0.4.0**
