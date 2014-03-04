@@ -4,7 +4,7 @@ description = 'Version-bump your software with a single command!'
 
 setup(
     name='bumpversion',
-    version='0.4.0',
+    version='0.4.1',
     url='https://github.com/peritus/bumpversion',
     author='Filip Noetzel',
     author_email='filip+bumpversion@j03.de',
