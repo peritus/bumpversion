@@ -190,6 +190,13 @@ Development of this happens on GitHub, patches including tests, documentation ar
 Changes
 =======
 
+**v0.4.1**
+
+- Add --list option (`#39 <https://github.com/peritus/bumpversion/issues/39>`_)
+- Use temporary files for handing over commit/tag messages to git/hg (`#36 <https://github.com/peritus/bumpversion/issues/36>`_)
+- Fix: don't encode stdout as utf-8 on py3 (`#40 <https://github.com/peritus/bumpversion/issues/40>`)
+- Fix: logging of content of config file was wrong
+
 **v0.4.0**
 
 - Add --verbose option (`#21 <https://github.com/peritus/bumpversion/issues/21>`_ `#30 <https://github.com/peritus/bumpversion/issues/30>`_)
