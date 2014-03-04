@@ -438,10 +438,12 @@ def main(original_args=None):
         logger.addHandler(ch)
 
     if len(logger_list.handlers) == 0:
-        ch2 = logging.StreamHandler(sys.stdout)
-        ch2.setFormatter(logformatter)
-        logger_list.addHandler(ch2)
-        logger_list.setLevel(1)
+       ch2 = logging.StreamHandler(sys.stdout)
+       ch2.setFormatter(logformatter)
+       logger_list.addHandler(ch2)
+
+    if known_args.list:
+          logger_list.setLevel(1)
 
     log_level = {
         0: logging.WARNING,

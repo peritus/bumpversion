@@ -1121,7 +1121,6 @@ def test_listing(tmpdir, vcs):
     with mock.patch("bumpversion.logger_list") as logger:
         main(['--list', 'patch'])
 
-    # beware of the trailing space (" ") after "serialize =":
     EXPECTED_LOG = dedent("""
         info|files=please_list_me.txt|
         info|current_version=0.5.5|
@@ -1136,3 +1135,28 @@ def test_listing(tmpdir, vcs):
     actual_log ="\n".join(_mock_calls_to_string(logger)[3:])
 
     assert actual_log == EXPECTED_LOG
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_no_list_no_stdout(tmpdir, vcs):
+    tmpdir.join("please_dont_list_me.txt").write("0.5.5")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = please_dont_list_me.txt
+        current_version = 0.5.5
+        commit = False
+        tag = False
+        """))
+
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "please_dont_list_me.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    out = check_output(
+        'bumpversion patch; exit 0',
+        shell=True,
+        stderr=subprocess.STDOUT
+    ).decode('utf-8')
+
+    assert out == ""
