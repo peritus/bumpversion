@@ -568,6 +568,9 @@ def main(original_args=None):
     parser3.add_argument('--new-version', metavar='VERSION',
                          help='New version that should be in the files',
                          required=not 'new_version' in defaults)
+    parser3.add_argument('--allow-dirty', action='store_true', default=False,
+                         help='Do not check that version control is non-dirty')
+
 
     commitgroup = parser3.add_mutually_exclusive_group()
 
@@ -614,7 +617,10 @@ def main(original_args=None):
 
     for vcs in VCS:
         if vcs.is_usable():
-            vcs.assert_nondirty()
+            if args.allow_dirty:
+                pass
+            else:
+                vcs.assert_nondirty()
             break
         else:
             vcs = None
