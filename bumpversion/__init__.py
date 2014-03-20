@@ -248,9 +248,6 @@ class Version(object):
         # this seems like a good idea because this should be the most complete format
         return self._labels_for_format(self.serialize_formats[0])
 
-    def register_part(self, part):
-        pass
-
     def parse(self, version_string):
 
         logger.info("Parsing current version '{}' with '{}'".format(version_string, self.parse_regex.pattern))
