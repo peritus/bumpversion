@@ -182,34 +182,70 @@ VCS = [Git, Mercurial]
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.items()))
 
+class VersionPartConfiguration(object):
+    pass
 
-class VersionPart(object):
+class ConfiguredVersionPartConfiguration(object):
+
+    def __init__(self, values, optional_value=None):
+
+        assert len(values) > 0
+
+        self._values = values
+
+        if optional_value is None:
+            optional_value = values[0]
+
+        self.first_value = values[0]
+        self.optional_value = optional_value
+
+    def bump(self, value):
+        return self._values[self._values.index(value)+1]
+
+class NumericVersionPartConfiguration(VersionPartConfiguration):
+
+    optional_value = "0"
+    first_value = "0"
 
     FIRST_NUMERIC = re.compile('([^\d]*)(\d+)(.*)')
 
-    def __init__(self, value):
+    @classmethod
+    def bump(cls, value):
+        part_prefix, numeric_version, part_suffix = cls.FIRST_NUMERIC.search(value).groups()
+        bumped_numeric = str(int(numeric_version) + 1)
+        return "".join([part_prefix, bumped_numeric, part_suffix])
+
+class VersionPart(object):
+
+    def __init__(self, value, config=None):
         self._value = value
+
+        if config is None:
+            config = NumericVersionPartConfiguration()
+
+        self.config = config
 
     @property
     def value(self):
-        return self._value or "0"
+        return self._value or self.config.optional_value
 
     def bump(self):
-        part_prefix, numeric_version, part_suffix = self.FIRST_NUMERIC.search(self.value).groups()
-        bumped_numeric = str(int(numeric_version) + 1)
-        self._value = "".join([part_prefix, bumped_numeric, part_suffix])
+        self._value = self.config.bump(self.value)
 
     def is_optional(self):
-        return self.value == "0"
+        return self.value == self.config.optional_value
 
     def __format__(self, format_spec):
         return self.value
 
     def __repr__(self):
-        return '<bumpversion.VersionPart:{}>'.format(self.value)
+        return '<bumpversion.VersionPart:{}:{}>'.format(
+            self.config.__class__.__name__,
+            self.value
+        )
 
-    def zero(self):
-        self._value = "0"
+    def null(self):
+        self._value = self.config.first_value
 
 class IncompleteVersionRepresenationException(Exception):
     def __init__(self, message):
@@ -225,7 +261,7 @@ class Version(object):
     Holds a complete representation of a version string
     """
 
-    def __init__(self, parse_regex, serialize_formats, context=None):
+    def __init__(self, parse_regex, serialize_formats, part_configs=None, context=None):
 
         try:
             self.parse_regex = re.compile(parse_regex)
@@ -234,6 +270,11 @@ class Version(object):
             raise e
 
         self.serialize_formats = serialize_formats
+
+        if not part_configs:
+            part_configs = {}
+
+        self.part_configs = part_configs
 
         if not context:
             context = {}
@@ -261,7 +302,7 @@ class Version(object):
             return
 
         for key, value in match.groupdict().items():
-            self._parsed[key] = VersionPart(value)
+            self._parsed[key] = VersionPart(value, self.part_configs.get(key))
 
         logger.info("Parsed the following values: " + self._keyvalue_string())
 
@@ -369,7 +410,7 @@ class Version(object):
                 self._parsed[part_name].bump()
                 bumped = True
             elif bumped:
-                self._parsed[label].zero()
+                self._parsed[label].null()
 
         logger.info("Values are now: " + self._keyvalue_string())
 
@@ -467,6 +508,8 @@ def main(original_args=None):
 
     config_file_exists = os.path.exists(known_args.config_file)
 
+    part_configs = {}
+
     if config_file_exists:
 
         config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
@@ -492,6 +535,14 @@ def main(original_args=None):
                     "bumpversion", boolvaluename)
             except NoOptionError:
                 pass  # no default value then ;)
+
+        for section_name in config.sections():
+            if section_name.startswith("bumpversion:part"):
+                part_config = dict(config.items(section_name))
+                if 'values' in part_config:
+                    part_config['values'] = list(filter(None, (x.strip() for x in part_config['values'].splitlines())))
+
+                part_configs[section_name.split(":", 2)[2]] = ConfiguredVersionPartConfiguration(**part_config)
 
     else:
         message = "Could not read config file at {}".format(known_args.config_file)
@@ -528,6 +579,7 @@ def main(original_args=None):
         v = Version(
             known_args.parse,
             known_args.serialize,
+            part_configs=part_configs,
             context=dict(list(time_context.items()) + list(prefixed_environ().items()) + list(vcs_info.items()))
         )
     except sre_constants.error as e:

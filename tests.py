@@ -1160,3 +1160,32 @@ def test_no_list_no_stdout(tmpdir, vcs):
     ).decode('utf-8')
 
     assert out == ""
+
+def test_bump_non_numeric_parts(tmpdir, capsys):
+    tmpdir.join("with_prereleases.txt").write("1.5.dev")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = with_prereleases.txt
+        current_version = 1.5.dev
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<release>[a-z]+))?
+        serialize =
+          {major}.{minor}.{release}
+          {major}.{minor}
+
+        [bumpversion:part:release]
+        optional_value = gamma
+        values =
+          dev
+          gamma
+        """))
+
+    main(['release', '--verbose'])
+
+    assert '1.5' == tmpdir.join("with_prereleases.txt").read()
+
+    main(['minor', '--verbose'])
+
+    assert '1.6.dev' == tmpdir.join("with_prereleases.txt").read()
+
