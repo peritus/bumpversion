@@ -264,7 +264,7 @@ class Version(object):
     def __init__(self, parse_regex, serialize_formats, part_configs=None, context=None):
 
         try:
-            self.parse_regex = re.compile(parse_regex)
+            self.parse_regex = re.compile(parse_regex, re.VERBOSE)
         except sre_constants.error as e:
             logger.error("--parse '{}' is not a valid regex".format(parse_regex))
             raise e
