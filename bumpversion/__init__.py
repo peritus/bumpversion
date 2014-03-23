@@ -333,9 +333,7 @@ class Version(object):
                 "Did not find key {} in {} when serializing version number".format(
                     repr(missing_key), repr(self._parsed)))
 
-        keys_needing_representation = set([k for k, v in self._parsed.items() if not v.is_optional()])
-
-        keys_needing_representation = set([])
+        keys_needing_representation = set()
         found_required = False
         for k in self.order():
             v = values[k]
