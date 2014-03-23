@@ -1189,3 +1189,61 @@ def test_bump_non_numeric_parts(tmpdir, capsys):
 
     assert '1.6.dev' == tmpdir.join("with_prereleases.txt").read()
 
+def test_python_prerelease_release_postrelease(tmpdir, capsys):
+    tmpdir.join("python386.txt").write("1.0a")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = python386.txt
+        current_version = 1.0a
+
+        # adapted from http://legacy.python.org/dev/peps/pep-0386/#the-new-versioning-algorithm
+        parse = ^
+            (?P<major>\d+)\.(?P<minor>\d+)   # minimum 'N.N'
+            (?:
+                (?P<prerel>[abc]|rc)         # 'a' = alpha, 'b' = beta
+                                             # 'c' or 'rc' = release candidate
+                (?:
+                    (?P<prerelversion>\d+(?:\.\d+)*)
+                )?
+            )?
+            (?P<postdev>(\.post(?P<post>\d+))?(\.dev(?P<dev>\d+))?)?
+
+        serialize =
+          {major}.{minor}{prerel}{prerelversion}
+          {major}.{minor}{prerel}
+          {major}.{minor}
+
+        [bumpversion:part:prerel]
+        optional_value = d
+        values =
+          dev
+          a
+          b
+          c
+          rc
+          d
+        """))
+
+    def file_content():
+        return tmpdir.join("python386.txt").read()
+
+    main(['prerel'])
+    assert '1.0b' == file_content()
+
+    main(['prerelversion'])
+    assert '1.0b1' == file_content()
+
+    main(['prerelversion'])
+    assert '1.0b2' == file_content()
+
+    main(['prerel']) # now it's 1.0c
+    main(['prerel'])
+    assert '1.0rc' == file_content()
+
+    main(['prerel'])
+    assert '1.0' == file_content()
+
+    main(['minor', '--verbose'])
+    assert '1.1dev' == file_content()
