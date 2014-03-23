@@ -353,10 +353,10 @@ class Version(object):
 
         # try whether all parsed keys are represented
         if raise_if_incomplete:
-            if keys_needing_representation > required_by_format:
+            if not (keys_needing_representation <= required_by_format):
                 raise IncompleteVersionRepresenationException(
                     "Could not represent '{}' in format '{}'".format(
-                        "', '".join(keys_needing_representation - required_by_format),
+                        "', '".join(keys_needing_representation ^ required_by_format),
                         serialize_format,
                     ))
 
