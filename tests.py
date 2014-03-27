@@ -191,17 +191,18 @@ files: file2""")
 
 
 def test_config_file_is_updated(tmpdir):
-    tmpdir.join("file3").write("13")
+    tmpdir.join("file3").write("0.0.13")
     tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
-current_version: 13
-new_version: 14
-files: file3""")
+current_version: 0.0.13
+new_version: 0.0.14
+files: file3
+""")
 
     tmpdir.chdir()
-    main(['patch'])
+    main(['patch', '--verbose'])
 
     assert """[bumpversion]
-current_version = 14
+current_version = 0.0.14
 files = file3
 
 """ == tmpdir.join(".bumpversion.cfg").read()
@@ -212,15 +213,14 @@ def test_dry_run(tmpdir, vcs):
     tmpdir.chdir()
 
     config = """[bumpversion]
-current_version = 12
-new_version = 12.2
+current_version = 0.12.0
 files = file4
 tag = True
 commit = True
 message = DO NOT BUMP VERSIONS WITH THIS FILE
 """
 
-    version = "12"
+    version = "0.12.0"
 
     tmpdir.join("file4").write(version)
     tmpdir.join(".bumpversion.cfg").write(config)
@@ -291,21 +291,6 @@ def test_bumpversion_custom_parse_semver(tmpdir):
          ])
 
     assert 'XXX1.1.7-master+allan2' == tmpdir.join("file15").read()
-
-
-def test_bumpversion_serialize_only_parts(tmpdir):
-    tmpdir.join("file51").write("XXX1.1.8-master+allan1")
-    tmpdir.chdir()
-    main([
-         '--current-version', '1.1.8-master+allan1',
-         '--parse', '(?P<major>\d+).(?P<minor>\d+).(?P<patch>\d+)(-(?P<prerel>[^\+]+))?(\+(?P<meta>.*))?',
-         '--serialize', 'v{major}.{minor}',
-         'meta',
-         'file51'
-         ])
-
-    assert 'XXXv1.1' == tmpdir.join("file51").read()
-
 
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_dirty_workdir(tmpdir, vcs):
@@ -482,6 +467,7 @@ def test_bump_version_ENV(tmpdir):
     tmpdir.chdir()
     environ['BUILD_NUMBER'] = "567"
     main([
+         '--verbose',
          '--current-version', '2.3.4',
          '--parse', '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+).*',
          '--serialize', '{major}.{minor}.{patch}.pre{$BUILD_NUMBER}',
@@ -491,7 +477,6 @@ def test_bump_version_ENV(tmpdir):
     del environ['BUILD_NUMBER']
 
     assert '2.3.5.pre567' == tmpdir.join("on_jenkins").read()
-
 
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git")])
 def test_current_version_from_tag(tmpdir, vcs):
@@ -742,14 +727,15 @@ def test_non_vcs_operations_if_vcs_is_not_installed(tmpdir, vcs, monkeypatch):
     assert '32.0.0' == tmpdir.join("VERSION").read()
 
 def test_multiple_serialize_threepart(tmpdir):
-    tmpdir.join("fileA").write("0.9")
+    tmpdir.join("fileA").write("Version: 0.9")
     tmpdir.chdir()
     main([
-         '--current-version', '0.9',
-         '--parse', '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?',
+         '--current-version', 'Version: 0.9',
+         '--parse', 'Version:\ (?P<major>\d+)(\.(?P<minor>\d+)(\.(?P<patch>\d+))?)?',
          '--serialize', 'Version: {major}.{minor}.{patch}',
          '--serialize', 'Version: {major}.{minor}',
          '--serialize', 'Version: {major}',
+         '--verbose',
          'major',
          'fileA'
          ])
@@ -818,10 +804,6 @@ def test_log_no_config_file_info_message(tmpdir, capsys):
         info|Parsed the following values: major=1, minor=0, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=1, minor=0, patch=1|
-        info|Available serialization formats: '{major}.{minor}.{patch}'|
-        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
-        info|Selected serialization format '{major}.{minor}.{patch}'|
-        info|Serialized to '1.0.1'|
         info|New version will be '1.0.1'|
         info|Asserting files blargh.txt contain string '1.0.0':|
         info|Found '1.0.0' in blargh.txt at line 0: 1.0.0|
@@ -852,6 +834,8 @@ def test_log_parse_doesnt_parse_current_version(tmpdir):
         info|Could not read config file at .bumpversion.cfg|
         info|Parsing version '12' using regexp 'xxx'|
         warn|Evaluating 'parse' option: 'xxx' does not parse current version '12'|
+        info|Parsing version '13' using regexp 'xxx'|
+        warn|Evaluating 'parse' option: 'xxx' does not parse current version '13'|
         info|New version will be '13'|
         info|Asserting files  contain string '12':|
         info|Would write to config file .bumpversion.cfg:|
@@ -911,11 +895,6 @@ def test_complex_info_logging(tmpdir, capsys):
         info|Parsed the following values: major=0, minor=4, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=4, patch=1|
-        info|Available serialization formats: '{major}.{minor}.{patch}', '{major}.{minor}'|
-        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
-        info|Could not represent 'patch' in format '{major}.{minor}'|
-        info|Selected serialization format '{major}.{minor}.{patch}'|
-        info|Serialized to '0.4.1'|
         info|New version will be '0.4.1'|
         info|Asserting files fileE contain string '0.4':|
         info|Found '0.4' in fileE at line 0: 0.4|
@@ -983,11 +962,6 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         info|Parsed the following values: major=0, minor=8, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=8, patch=1|
-        info|Available serialization formats: '{major}.{minor}.{patch}', '{major}.{minor}'|
-        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
-        info|Could not represent 'patch' in format '{major}.{minor}'|
-        info|Selected serialization format '{major}.{minor}.{patch}'|
-        info|Serialized to '0.8.1'|
         info|Dry run active, won't touch any files.|
         info|New version will be '0.8.1'|
         info|Asserting files dont_touch_me.txt contain string '0.8':|
@@ -1059,10 +1033,6 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         info|Parsed the following values: major=0, minor=3, patch=3|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=3, patch=4|
-        info|Available serialization formats: '{major}.{minor}.{patch}'|
-        info|Found '{major}.{minor}.{patch}' to be a usable serialization format|
-        info|Selected serialization format '{major}.{minor}.{patch}'|
-        info|Serialized to '0.3.4'|
         info|New version will be '0.3.4'|
         info|Asserting files please_touch_me.txt contain string '0.3.3':|
         info|Found '0.3.3' in please_touch_me.txt at line 0: 0.3.3|
@@ -1263,3 +1233,28 @@ def test_part_first_value(tmpdir):
 
     assert '1.1.0' == tmpdir.join("the_version.txt").read()
 
+def test_multi_file_configuration(tmpdir, capsys):
+    tmpdir.join("FULL_VERSION.txt").write("1.0.3")
+    tmpdir.join("MAJOR_VERSION.txt").write("1")
+
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        current_version = 1.0.3
+
+        [bumpversion:file:FULL_VERSION.txt]
+
+        [bumpversion:file:MAJOR_VERSION.txt]
+        serialize = {major}
+        parse = \d+
+
+        """))
+
+    main(['major', '--verbose'])
+    assert '2.0.0' in tmpdir.join("FULL_VERSION.txt").read()
+    assert '2' in tmpdir.join("MAJOR_VERSION.txt").read()
+
+    main(['patch'])
+    assert '2.0.1' in tmpdir.join("FULL_VERSION.txt").read()
+    assert '2' in tmpdir.join("MAJOR_VERSION.txt").read()
