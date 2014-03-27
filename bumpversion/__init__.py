@@ -187,7 +187,7 @@ class VersionPartConfiguration(object):
 
 class ConfiguredVersionPartConfiguration(object):
 
-    def __init__(self, values, optional_value=None):
+    def __init__(self, values, optional_value=None, first_value=None):
 
         assert len(values) > 0
 
@@ -196,8 +196,12 @@ class ConfiguredVersionPartConfiguration(object):
         if optional_value is None:
             optional_value = values[0]
 
-        self.first_value = values[0]
         self.optional_value = optional_value
+
+        if first_value is None:
+            first_value = values[0]
+
+        self.first_value = first_value
 
     def bump(self, value):
         return self._values[self._values.index(value)+1]
@@ -205,9 +209,15 @@ class ConfiguredVersionPartConfiguration(object):
 class NumericVersionPartConfiguration(VersionPartConfiguration):
 
     optional_value = "0"
-    first_value = "0"
 
     FIRST_NUMERIC = re.compile('([^\d]*)(\d+)(.*)')
+
+    def __init__(self, first_value=None):
+
+        if first_value is None:
+            first_value = "0"
+
+        self.first_value = first_value
 
     @classmethod
     def bump(cls, value):
@@ -537,10 +547,14 @@ def main(original_args=None):
         for section_name in config.sections():
             if section_name.startswith("bumpversion:part"):
                 part_config = dict(config.items(section_name))
+
+                ThisVersionPartConfiguration = NumericVersionPartConfiguration
+
                 if 'values' in part_config:
                     part_config['values'] = list(filter(None, (x.strip() for x in part_config['values'].splitlines())))
+                    ThisVersionPartConfiguration = ConfiguredVersionPartConfiguration
 
-                part_configs[section_name.split(":", 2)[2]] = ConfiguredVersionPartConfiguration(**part_config)
+                part_configs[section_name.split(":", 2)[2]] = ThisVersionPartConfiguration(**part_config)
 
     else:
         message = "Could not read config file at {}".format(known_args.config_file)

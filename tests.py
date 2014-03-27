@@ -1247,3 +1247,22 @@ def test_python_prerelease_release_postrelease(tmpdir, capsys):
 
     main(['minor', '--verbose'])
     assert '1.1dev' == file_content()
+
+def test_part_first_value(tmpdir):
+
+    tmpdir.join("the_version.txt").write("0.9.4")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = the_version.txt
+        current_version = 0.9.4
+
+        [bumpversion:part:minor]
+        first_value = 1
+        """))
+
+    main(['major', '--verbose'])
+
+    assert '1.1.0' == tmpdir.join("the_version.txt").read()
+
