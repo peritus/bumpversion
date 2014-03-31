@@ -46,7 +46,7 @@ def _mock_calls_to_string(called_mock):
 EXPECTED_USAGE = ("""
 usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--parse REGEX]
                [--serialize FORMAT] [--current-version VERSION] [--dry-run]
-               --new-version VERSION [--commit | --no-commit]
+               --new-version VERSION [--allow-dirty] [--commit | --no-commit]
                [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part [file [file ...]]
 
@@ -72,6 +72,8 @@ optional arguments:
   --new-version VERSION
                         New version that should be in the files (default:
                         None)
+  --allow-dirty         Do not check that version control is non-dirty
+                        (default: False)
   --commit              Commit to version control (default: False)
   --no-commit           Do not commit to version control
   --tag                 Create a tag in version control (default: False)
@@ -83,6 +85,18 @@ optional arguments:
                         {current_version} → {new_version})
 """ % DESCRIPTION).lstrip()
 
+def _unidiff_output(expected, actual):
+    """
+    Helper function. Returns a string containing the unified diff of two multiline strings.
+    """
+
+    import difflib
+    expected=expected.splitlines(1)
+    actual=actual.splitlines(1)
+
+    diff=difflib.unified_diff(expected, actual)
+
+    return ''.join(diff)
 
 def test_usage_string(tmpdir, capsys):
     tmpdir.chdir()
@@ -91,6 +105,9 @@ def test_usage_string(tmpdir, capsys):
         main(['--help'])
 
     out, err = capsys.readouterr()
+    import pdb; pdb.set_trace()
+
+    s = _unidiff_output(out, EXPECTED_USAGE)
     assert err == ""
     assert out == EXPECTED_USAGE, "Usage string changed to \n\n\n{}\n\n\n".format(out)
 
