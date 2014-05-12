@@ -1202,7 +1202,7 @@ def test_python_prerelease_release_postrelease(tmpdir, capsys):
         parse = ^
             (?P<major>\d+)\.(?P<minor>\d+)   # minimum 'N.N'
             (?:
-                (?P<prerel>[abc]|rc)         # 'a' = alpha, 'b' = beta
+                (?P<prerel>[abc]|rc|dev)     # 'a' = alpha, 'b' = beta
                                              # 'c' or 'rc' = release candidate
                 (?:
                     (?P<prerelversion>\d+(?:\.\d+)*)
@@ -1245,8 +1245,11 @@ def test_python_prerelease_release_postrelease(tmpdir, capsys):
     main(['prerel'])
     assert '1.0' == file_content()
 
-    main(['minor', '--verbose'])
+    main(['minor'])
     assert '1.1dev' == file_content()
+
+    main(['prerel', '--verbose'])
+    assert '1.1a' == file_content()
 
 def test_part_first_value(tmpdir):
 
