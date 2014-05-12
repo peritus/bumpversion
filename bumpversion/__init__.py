@@ -239,8 +239,11 @@ class VersionPart(object):
     def value(self):
         return self._value or self.config.optional_value
 
+    def copy(self):
+        return VersionPart(self._value)
+
     def bump(self):
-        self._value = self.config.bump(self.value)
+        return VersionPart(self.config.bump(self.value), self.config)
 
     def is_optional(self):
         return self.value == self.config.optional_value
@@ -255,7 +258,7 @@ class VersionPart(object):
         )
 
     def null(self):
-        self._value = self.config.first_value
+        return VersionPart(self.config.first_value, self.config)
 
 class IncompleteVersionRepresenationException(Exception):
     def __init__(self, message):
@@ -265,7 +268,51 @@ class MissingValueForSerializationException(Exception):
     def __init__(self, message):
         self.message = message
 
+def keyvaluestring(d):
+    return ", ".join("{}={}".format(k, v) for k, v in sorted(d.items()))
+
 class Version(object):
+
+    def __init__(self, config, **kwargs):
+        self._config = config
+        self._values = dict(**kwargs)
+
+    def __getitem__(self, key):
+        return self._values[key]
+
+    def __len__(self):
+        return len(self._values)
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __repr__(self):
+        return '<bumpversion.Version:{}>'.format(keyvaluestring(self._values))
+
+    def serialize(self):
+        return self._config.serialize(self)
+
+    def bump(self, part_name):
+        bumped = False
+
+        new_values = {}
+
+        for label in self._config.order():
+            if not label in self._values:
+                continue
+            elif label == part_name:
+                new_values[label] = self._values[label].bump()
+                bumped = True
+            elif bumped:
+                new_values[label] = self._values[label].null()
+            else:
+                new_values[label] = self._values[label].copy()
+
+        new_version = Version(self._config, **new_values)
+
+        return new_version
+
+class VersionConfig(object):
 
     """
     Holds a complete representation of a version string
@@ -301,32 +348,37 @@ class Version(object):
 
     def parse(self, version_string):
 
-        logger.info("Parsing current version '{}' with '{}'".format(version_string, self.parse_regex.pattern))
+        regexp_one_line = "".join([l.split("#")[0].strip() for l in self.parse_regex.pattern.splitlines()])
+
+        logger.info("Parsing version '{}' using regexp '{}'".format(version_string, regexp_one_line))
 
         match = self.parse_regex.search(version_string)
 
-        self._parsed = {}
+        _parsed = {}
         if not match:
             logger.warn("Evaluating 'parse' option: '{}' does not parse current version '{}'".format(
                 self.parse_regex.pattern, version_string))
             return
 
         for key, value in match.groupdict().items():
-            self._parsed[key] = VersionPart(value, self.part_configs.get(key))
+            _parsed[key] = VersionPart(value, self.part_configs.get(key))
 
-        logger.info("Parsed the following values: " + self._keyvalue_string())
 
-    def _keyvalue_string(self):
-        return ", ".join("{}={}".format(k, v) for k, v in sorted(self._parsed.items()))
+        v = Version(self, **_parsed)
 
-    def _serialize(self, serialize_format, raise_if_incomplete=False):
+        logger.info("Parsed the following values: %s" % keyvaluestring(v._values))
+
+        return v
+
+    def _serialize(self, version, serialize_format, raise_if_incomplete=False):
         """
         Attempts to serialize a version with the given serialization format.
 
         Raises MissingValueForSerializationException if not serializable
         """
         values = self.context.copy()
-        values.update(self._parsed)
+        for k in version:
+            values[k] = version[k]
 
         # TODO dump complete context on debug level
 
@@ -341,7 +393,7 @@ class Version(object):
             )
             raise MissingValueForSerializationException(
                 "Did not find key {} in {} when serializing version number".format(
-                    repr(missing_key), repr(self._parsed)))
+                    repr(missing_key), repr(version)))
 
         keys_needing_representation = set()
         found_required = False
@@ -373,7 +425,7 @@ class Version(object):
         return serialized
 
 
-    def _choose_serialize_format(self):
+    def _choose_serialize_format(self, version):
 
         chosen = None
 
@@ -381,7 +433,7 @@ class Version(object):
 
         for serialize_format in self.serialize_formats:
             try:
-                self._serialize(serialize_format, raise_if_incomplete=True)
+                self._serialize(version, serialize_format, raise_if_incomplete=True)
                 chosen = serialize_format
                 logger.info("Found '{}' to be a usable serialization format".format(chosen))
             except IncompleteVersionRepresenationException as e:
@@ -398,29 +450,10 @@ class Version(object):
 
         return chosen
 
-    def serialize(self):
-        serialized = self._serialize(self._choose_serialize_format())
-
+    def serialize(self, version):
+        serialized = self._serialize(version, self._choose_serialize_format(version))
         logger.info("Serialized to '{}'".format(serialized))
-
         return serialized
-
-    def bump(self, part_name):
-
-        logger.info("Attempting to increment part '{}'".format(part_name))
-
-        bumped = False
-
-        for label in self.order():
-            if not label in self._parsed:
-                continue
-            elif label == part_name:
-                self._parsed[part_name].bump()
-                bumped = True
-            elif bumped:
-                self._parsed[label].null()
-
-        logger.info("Values are now: " + self._keyvalue_string())
 
 OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--config-file',
@@ -588,7 +621,7 @@ def main(original_args=None):
     }
 
     try:
-        v = Version(
+        vc = VersionConfig(
             known_args.parse,
             known_args.serialize,
             part_configs=part_configs,
@@ -597,14 +630,16 @@ def main(original_args=None):
     except sre_constants.error as e:
         sys.exit(1)
 
-    if not 'new_version' in defaults and known_args.current_version:
-        v.parse(known_args.current_version)
+    current_version = vc.parse(known_args.current_version) if known_args.current_version else None
 
-        if len(positionals) > 0:
-            v.bump(positionals[0])
+    if not 'new_version' in defaults and known_args.current_version:
 
         try:
-            defaults['new_version'] = v.serialize()
+            if current_version and len(positionals) > 0:
+                logger.info("Attempting to increment part '{}'".format(positionals[0]))
+                new_version = current_version.bump(positionals[0])
+                logger.info("Values are now: " + keyvaluestring(new_version._values))
+                defaults['new_version'] = new_version.serialize()
         except MissingValueForSerializationException as e:
             logger.info("Opportunistic finding of new_version failed: " + e.message)
         except IncompleteVersionRepresenationException as e:

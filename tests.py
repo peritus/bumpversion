@@ -121,7 +121,6 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     if vcs == "git":
         assert "usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--parse REGEX]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
-        assert "[--new-version VERSION]" in out
     else:
         assert out == EXPECTED_USAGE
 
@@ -815,7 +814,7 @@ def test_log_no_config_file_info_message(tmpdir, capsys):
 
     EXPECTED_LOG = dedent("""
         info|Could not read config file at .bumpversion.cfg|
-        info|Parsing current version '1.0.0' with '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsing version '1.0.0' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
         info|Parsed the following values: major=1, minor=0, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=1, minor=0, patch=1|
@@ -851,13 +850,8 @@ def test_log_parse_doesnt_parse_current_version(tmpdir):
 
     EXPECTED_LOG = dedent("""
         info|Could not read config file at .bumpversion.cfg|
-        info|Parsing current version '12' with 'xxx'|
+        info|Parsing version '12' using regexp 'xxx'|
         warn|Evaluating 'parse' option: 'xxx' does not parse current version '12'|
-        info|Attempting to increment part 'patch'|
-        info|Values are now: |
-        info|Available serialization formats: '{major}.{minor}.{patch}'|
-        info|Did not find key 'major' in {} when serializing version number|
-        info|Opportunistic finding of new_version failed|
         info|New version will be '13'|
         info|Asserting files  contain string '12':|
         info|Would write to config file .bumpversion.cfg:|
@@ -913,7 +907,7 @@ def test_complex_info_logging(tmpdir, capsys):
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
         
         |
-        info|Parsing current version '0.4' with '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsing version '0.4' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
         info|Parsed the following values: major=0, minor=4, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=4, patch=1|
@@ -985,7 +979,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
 
         |
-        info|Parsing current version '0.8' with '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsing version '0.8' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
         info|Parsed the following values: major=0, minor=8, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=8, patch=1|
@@ -1061,7 +1055,7 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         tag = False
         
         |
-        info|Parsing current version '0.3.3' with '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsing version '0.3.3' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
         info|Parsed the following values: major=0, minor=3, patch=3|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=3, patch=4|
