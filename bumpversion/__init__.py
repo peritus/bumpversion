@@ -717,8 +717,8 @@ def main(original_args=None):
         ))))
 
         if not args.dry_run:
-            with io.open(path, 'wt', encoding='utf-8') as f:
-                f.write(after)
+            with io.open(path, 'wb') as f:
+                f.write(after.encode('utf-8'))
 
     commit_files = files
 
