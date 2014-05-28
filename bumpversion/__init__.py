@@ -194,7 +194,10 @@ class ConfiguredFile(object):
         self._versionconfig = versionconfig
 
     def should_contain_version(self, version, context):
-        serialized_version = self._versionconfig.serialize(version, context)
+
+        context['current_version'] = self._versionconfig.serialize(version, context)
+
+        serialized_version = self._versionconfig.search.format(**context)
 
         if self.contains(serialized_version):
             return
@@ -216,31 +219,36 @@ class ConfiguredFile(object):
                     return True
         return False
 
-    def replace(self, search, replace, context, dry_run):
+    def replace(self, current_version, new_version, context, dry_run):
 
         with io.open(self.path, 'rb') as f:
-            before = f.read().decode('utf-8')
+            file_content_before = f.read().decode('utf-8')
 
-        after = before.replace(
-            self._versionconfig.serialize(search, context),
-            self._versionconfig.serialize(replace, context),
+        context['current_version'] = self._versionconfig.serialize(current_version, context)
+        context['new_version'] = self._versionconfig.serialize(new_version, context)
+
+        search_for = self._versionconfig.search.format(**context)
+        replace_with = self._versionconfig.replace.format(**context)
+
+        file_content_after = file_content_before.replace(
+            search_for, replace_with
         )
 
-        if before == after:
+        if file_content_before == file_content_after:
             # TODO expose this to be configurable
-            after = before.replace(
-                search.original,
-                self._versionconfig.serialize(replace, context),
+            file_content_after = file_content_before.replace(
+                current_version.original,
+                replace_with,
             )
 
-        if before != after:
+        if file_content_before != file_content_after:
             logger.info("{} file {}:".format(
                 "Would change" if dry_run else "Changing",
                 self.path,
             ))
             logger.info("\n".join(list(unified_diff(
-                before.splitlines(),
-                after.splitlines(),
+                file_content_before.splitlines(),
+                file_content_after.splitlines(),
                 lineterm="",
                 fromfile="a/"+self.path,
                 tofile="b/"+self.path
@@ -253,7 +261,7 @@ class ConfiguredFile(object):
 
         if not dry_run:
             with io.open(self.path, 'wt', encoding='utf-8') as f:
-                f.write(after)
+                f.write(file_content_after)
 
     def __str__(self):
         return self.path
@@ -394,7 +402,7 @@ class VersionConfig(object):
     Holds a complete representation of a version string
     """
 
-    def __init__(self, parse, serialize, part_configs=None):
+    def __init__(self, parse, serialize, search, replace, part_configs=None):
 
         try:
             self.parse_regex = re.compile(parse, re.VERBOSE)
@@ -408,6 +416,8 @@ class VersionConfig(object):
             part_configs = {}
 
         self.part_configs = part_configs
+        self.search = search
+        self.replace = replace
 
     def _labels_for_format(self, serialize_format):
         return (label for _, label, _, _ in Formatter().parse(serialize_format))
@@ -468,6 +478,7 @@ class VersionConfig(object):
 
         keys_needing_representation = set()
         found_required = False
+
         for k in self.order():
             v = values[k]
 
@@ -687,6 +698,12 @@ def main(original_args=None):
                 if not 'serialize' in section_config:
                     section_config['serialize'] = defaults.get('serialize', [str('{major}.{minor}.{patch}')])
 
+                if not 'search' in section_config:
+                    section_config['search'] = defaults.get("search", '{current_version}')
+
+                if not 'replace' in section_config:
+                    section_config['replace'] = defaults.get("replace", '{new_version}')
+
                 files.append(ConfiguredFile(filename, VersionConfig(**section_config)))
 
     else:
@@ -708,6 +725,14 @@ def main(original_args=None):
                          action=DiscardDefaultIfSpecifiedAppendAction,
                          help='How to format what is parsed back to a version',
                          default=defaults.get("serialize", [str('{major}.{minor}.{patch}')]))
+    parser2.add_argument('--search', metavar='SEARCH',
+                         action=DiscardDefaultIfSpecifiedAppendAction,
+                         help='Template for complete string to search',
+                         default=defaults.get("search", '{current_version}'))
+    parser2.add_argument('--replace', metavar='REPLACE',
+                         action=DiscardDefaultIfSpecifiedAppendAction,
+                         help='Template for complete string to replace',
+                         default=defaults.get("replace", '{new_version}'))
 
     known_args, remaining_argv = parser2.parse_known_args(args)
 
@@ -719,8 +744,10 @@ def main(original_args=None):
 
     try:
         vc = VersionConfig(
-            known_args.parse,
-            known_args.serialize,
+            parse=known_args.parse,
+            serialize=known_args.serialize,
+            search=known_args.search,
+            replace=known_args.replace,
             part_configs=part_configs,
         )
     except sre_constants.error as e:

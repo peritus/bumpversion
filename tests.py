@@ -45,9 +45,10 @@ def _mock_calls_to_string(called_mock):
 
 EXPECTED_USAGE = ("""
 usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--parse REGEX]
-               [--serialize FORMAT] [--current-version VERSION] [--dry-run]
-               --new-version VERSION [--commit | --no-commit]
-               [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
+               [--serialize FORMAT] [--search SEARCH] [--replace REPLACE]
+               [--current-version VERSION] [--dry-run] --new-version VERSION
+               [--commit | --no-commit] [--tag | --no-tag]
+               [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part [file [file ...]]
 
 %s
@@ -66,6 +67,10 @@ optional arguments:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
                         (default: ['{major}.{minor}.{patch}'])
+  --search SEARCH       Template for complete string to search (default:
+                        {current_version})
+  --replace REPLACE     Template for complete string to replace (default:
+                        {new_version})
   --current-version VERSION
                         Version that needs to be updated (default: None)
   --dry-run, -n         Don't write any files, just pretend. (default: False)
@@ -1307,5 +1312,66 @@ def test_multi_file_configuration2(tmpdir, capsys):
     assert '1.7.1' in tmpdir.join("setup.cfg").read()
     assert 'MyAwesomeSoftware(TM) v1.7' in tmpdir.join("README.txt").read()
     assert '1.7.1+bob+38945' in tmpdir.join("BUILDNUMBER").read()
+
+
+def test_search_replace_to_avoid_updating_unconcerned_lines(tmpdir, capsys):
+    tmpdir.chdir()
+
+    tmpdir.join("requirements.txt").write("Django>=1.5.6,<1.6\nMyProject==1.5.6")
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+      [bumpversion]
+      current_version = 1.5.6
+
+      [bumpversion:file:requirements.txt]
+      search = MyProject=={current_version}
+      replace = MyProject=={new_version}
+      """))
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['minor', '--verbose'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|Reading config file .bumpversion.cfg:|
+        info|[bumpversion]
+        current_version = 1.5.6
+
+        [bumpversion:file:requirements.txt]
+        search = MyProject=={current_version}
+        replace = MyProject=={new_version}
+
+        |
+        info|Parsing version '1.5.6' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=1, minor=5, patch=6|
+        info|Attempting to increment part 'minor'|
+        info|Values are now: major=1, minor=6, patch=0|
+        info|New version will be '1.6.0'|
+        info|Asserting files requirements.txt contain the version string:|
+        info|Found 'MyProject==1.5.6' in requirements.txt at line 1: MyProject==1.5.6|
+        info|Changing file requirements.txt:|
+        info|--- a/requirements.txt
+        +++ b/requirements.txt
+        @@ -1,2 +1,2 @@
+         Django>=1.5.6,<1.6
+        -MyProject==1.5.6
+        +MyProject==1.6.0|
+        info|Writing to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        current_version = 1.6.0
+
+        [bumpversion:file:requirements.txt]
+        search = MyProject=={current_version}
+        replace = MyProject=={new_version}
+
+        |
+        """).strip()
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert actual_log == EXPECTED_LOG
+
+    assert 'MyProject==1.6.0' in tmpdir.join("requirements.txt").read()
+    assert 'Django>=1.5.6' in tmpdir.join("requirements.txt").read()
 
 
