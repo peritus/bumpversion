@@ -1258,3 +1258,54 @@ def test_multi_file_configuration(tmpdir, capsys):
     main(['patch'])
     assert '2.0.1' in tmpdir.join("FULL_VERSION.txt").read()
     assert '2' in tmpdir.join("MAJOR_VERSION.txt").read()
+
+
+def test_multi_file_configuration2(tmpdir, capsys):
+    tmpdir.join("setup.cfg").write("1.6.6")
+    tmpdir.join("README.txt").write("MyAwesomeSoftware(TM) v1.6")
+    tmpdir.join("BUILDNUMBER").write("1.6.6+joe+38943")
+
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+      [bumpversion]
+      current_version = 1.6.6
+
+      [something:else]
+
+      [foo]
+
+      [bumpversion:file:setup.cfg]
+
+      [bumpversion:file:README.txt]
+      parse = '(?P<major>\d+)\.(?P<minor>\d+)'
+      serialize =
+        {major}.{minor}
+
+      [bumpversion:file:BUILDNUMBER]
+      serialize =
+        {major}.{minor}.{patch}+{$USER}+{$BUILDNUMBER}
+
+      """))
+
+    environ['BUILDNUMBER'] = "38944"
+    environ['USER'] = "bob"
+    main(['minor', '--verbose'])
+    del environ['BUILDNUMBER']
+    del environ['USER']
+
+    assert '1.7.0' in tmpdir.join("setup.cfg").read()
+    assert 'MyAwesomeSoftware(TM) v1.7' in tmpdir.join("README.txt").read()
+    assert '1.7.0+bob+38944' in tmpdir.join("BUILDNUMBER").read()
+
+    environ['BUILDNUMBER'] = "38945"
+    environ['USER'] = "bob"
+    main(['patch', '--verbose'])
+    del environ['BUILDNUMBER']
+    del environ['USER']
+
+    assert '1.7.1' in tmpdir.join("setup.cfg").read()
+    assert 'MyAwesomeSoftware(TM) v1.7' in tmpdir.join("README.txt").read()
+    assert '1.7.1+bob+38945' in tmpdir.join("BUILDNUMBER").read()
+
+

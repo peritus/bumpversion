@@ -653,13 +653,12 @@ def main(original_args=None):
 
         for section_name in config.sections():
 
-            if not ':' in section_name:
+            section_name_match = re.compile("^bumpversion:(file|part):(.+)").match(section_name)
+
+            if not section_name_match:
                 continue
 
-            the_word_bumpversion, section_prefix, section_value = section_name.split(":", 2)
-
-            if 'bumpversion' != the_word_bumpversion:
-                continue
+            section_prefix, section_value = section_name_match.groups()
 
             section_config = dict(config.items(section_name))
 
