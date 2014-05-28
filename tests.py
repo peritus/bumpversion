@@ -805,7 +805,7 @@ def test_log_no_config_file_info_message(tmpdir, capsys):
         info|Attempting to increment part 'patch'|
         info|Values are now: major=1, minor=0, patch=1|
         info|New version will be '1.0.1'|
-        info|Asserting files blargh.txt contain string '1.0.0':|
+        info|Asserting files blargh.txt contain the version string:|
         info|Found '1.0.0' in blargh.txt at line 0: 1.0.0|
         info|Changing file blargh.txt:|
         info|--- a/blargh.txt
@@ -837,7 +837,7 @@ def test_log_parse_doesnt_parse_current_version(tmpdir):
         info|Parsing version '13' using regexp 'xxx'|
         warn|Evaluating 'parse' option: 'xxx' does not parse current version '13'|
         info|New version will be '13'|
-        info|Asserting files  contain string '12':|
+        info|Asserting files  contain the version string:|
         info|Would write to config file .bumpversion.cfg:|
         info|[bumpversion]
         current_version = 13
@@ -896,7 +896,7 @@ def test_complex_info_logging(tmpdir, capsys):
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=4, patch=1|
         info|New version will be '0.4.1'|
-        info|Asserting files fileE contain string '0.4':|
+        info|Asserting files fileE contain the version string:|
         info|Found '0.4' in fileE at line 0: 0.4|
         info|Changing file fileE:|
         info|--- a/fileE
@@ -964,7 +964,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         info|Values are now: major=0, minor=8, patch=1|
         info|Dry run active, won't touch any files.|
         info|New version will be '0.8.1'|
-        info|Asserting files dont_touch_me.txt contain string '0.8':|
+        info|Asserting files dont_touch_me.txt contain the version string:|
         info|Found '0.8' in dont_touch_me.txt at line 0: 0.8|
         info|Would change file dont_touch_me.txt:|
         info|--- a/dont_touch_me.txt
@@ -1034,7 +1034,7 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=3, patch=4|
         info|New version will be '0.3.4'|
-        info|Asserting files please_touch_me.txt contain string '0.3.3':|
+        info|Asserting files please_touch_me.txt contain the version string:|
         info|Found '0.3.3' in please_touch_me.txt at line 0: 0.3.3|
         info|Changing file please_touch_me.txt:|
         info|--- a/please_touch_me.txt

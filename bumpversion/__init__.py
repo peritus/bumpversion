@@ -820,7 +820,7 @@ def main(original_args=None):
 
     # make sure files exist and contain version string
 
-    logger.info("Asserting files {} contain string '{}':".format(", ".join([str(f) for f in files]), args.current_version))
+    logger.info("Asserting files {} contain the version string:".format(", ".join([str(f) for f in files])))
 
     for f in files:
         f.should_contain_version(current_version, context)
