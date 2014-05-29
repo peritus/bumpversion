@@ -1375,3 +1375,61 @@ def test_search_replace_to_avoid_updating_unconcerned_lines(tmpdir, capsys):
     assert 'Django>=1.5.6' in tmpdir.join("requirements.txt").read()
 
 
+def test_search_replace_expanding_changelog(tmpdir, capsys):
+
+    tmpdir.chdir()
+
+    tmpdir.join("CHANGELOG.md").write(dedent("""
+    My awesome software project Changelog
+    =====================================
+
+    Unreleased
+    ----------
+
+    * Some nice feature
+    * Some other nice feature
+
+    Version v8.1.1 (2014-05-28)
+    ---------------------------
+
+    * Another old nice feature
+
+    """))
+    
+    config_content = dedent("""
+      [bumpversion]
+      current_version = 8.1.1
+
+      [bumpversion:file:CHANGELOG.md]
+      search =
+        Unreleased
+        ----------
+      replace =
+        Unreleased
+        ----------
+        Version v{new_version} ({now:%Y-%m-%d})
+        ---------------------------
+    """)
+
+    tmpdir.join(".bumpversion.cfg").write(config_content)
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['minor', '--verbose'])
+
+    predate = dedent('''
+      Unreleased
+      ----------
+      Version v8.2.0 (20
+      ''').strip()
+
+    postdate = dedent('''
+      )
+      ---------------------------
+
+      * Some nice feature
+      * Some other nice feature
+      ''').strip()
+
+    assert predate in tmpdir.join("CHANGELOG.md").read()
+    assert postdate in tmpdir.join("CHANGELOG.md").read()
+
