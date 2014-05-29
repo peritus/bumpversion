@@ -1,5 +1,9 @@
 language: python
 
+os:
+  - linux
+  - osx
+
 env:
   - TOX_ENV=py27
   - TOX_ENV=py27-configparser
