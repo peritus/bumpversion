@@ -1433,3 +1433,15 @@ def test_search_replace_expanding_changelog(tmpdir, capsys):
     assert predate in tmpdir.join("CHANGELOG.md").read()
     assert postdate in tmpdir.join("CHANGELOG.md").read()
 
+def test_search_replace_cli(tmpdir, capsys):
+    tmpdir.join("file89").write("My birthday: 3.5.98\nCurrent version: 3.5.98")
+    tmpdir.chdir()
+    main([
+         '--current-version', '3.5.98',
+         '--search', 'Current version: {current_version}',
+         '--replace', 'Current version: {new_version}',
+         'minor',
+         'file89',
+         ])
+
+    assert 'My birthday: 3.5.98\nCurrent version: 3.6.0' == tmpdir.join("file89").read()

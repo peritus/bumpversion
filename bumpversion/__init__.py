@@ -545,6 +545,8 @@ OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--new-version',
     '--parse',
     '--serialize',
+    '--search',
+    '--replace',
     '--tag-name',
 ]
 
@@ -726,11 +728,9 @@ def main(original_args=None):
                          help='How to format what is parsed back to a version',
                          default=defaults.get("serialize", [str('{major}.{minor}.{patch}')]))
     parser2.add_argument('--search', metavar='SEARCH',
-                         action=DiscardDefaultIfSpecifiedAppendAction,
                          help='Template for complete string to search',
                          default=defaults.get("search", '{current_version}'))
     parser2.add_argument('--replace', metavar='REPLACE',
-                         action=DiscardDefaultIfSpecifiedAppendAction,
                          help='Template for complete string to replace',
                          default=defaults.get("replace", '{new_version}'))
 
