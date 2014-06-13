@@ -8,7 +8,7 @@ setup(
     url='https://github.com/peritus/bumpversion',
     author='Filip Noetzel',
     author_email='filip+bumpversion@j03.de',
-    license='',
+    license='MIT',
     packages=['bumpversion'],
     description=description,
     long_description=str(open('README.rst', 'rb').read()).replace(description, ''),
