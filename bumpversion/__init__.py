@@ -18,6 +18,7 @@ import os
 import re
 import sre_constants
 import subprocess
+import warnings
 import io
 from string import Formatter
 from datetime import datetime
@@ -584,6 +585,9 @@ def main(original_args=None):
       sys.argv[1:] if original_args is None else original_args
     )
 
+    if len(positionals[1:]) > 2:
+        warnings.warn("Giving multiple files on the command line will be deprecated, please use [bumpversion:file:...] in a config file.", PendingDeprecationWarning)
+
     parser1 = argparse.ArgumentParser(add_help=False)
 
     parser1.add_argument(
@@ -653,6 +657,12 @@ def main(original_args=None):
 
         logger.info("Reading config file {}:".format(known_args.config_file))
         logger.info(log_config.getvalue())
+
+        if 'files' in dict(config.items("bumpversion")):
+            warnings.warn(
+                "'files =' configuration is will be deprecated, please use [bumpversion:file:...]",
+                PendingDeprecationWarning
+            )
 
         defaults.update(dict(config.items("bumpversion")))
 
@@ -816,6 +826,7 @@ def main(original_args=None):
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
                          help='Commit message',
                          default=defaults.get('message', 'Bump version: {current_version} → {new_version}'))
+
 
     file_names = []
     if 'files' in defaults:

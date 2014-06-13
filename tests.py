@@ -16,6 +16,7 @@ from textwrap import dedent
 from functools import partial
 
 from bumpversion import main, DESCRIPTION
+import bumpversion
 
 SUBPROCESS_ENV = dict(
     list(environ.items()) + [('HGENCODING', 'utf-8')]
@@ -1445,3 +1446,46 @@ def test_search_replace_cli(tmpdir, capsys):
          ])
 
     assert 'My birthday: 3.5.98\nCurrent version: 3.6.0' == tmpdir.join("file89").read()
+
+import warnings
+
+def test_deprecation_warning_files_in_global_configuration(tmpdir):
+    tmpdir.chdir()
+
+    tmpdir.join("fileX").write("3.2.1")
+    tmpdir.join("fileY").write("3.2.1")
+    tmpdir.join("fileZ").write("3.2.1")
+
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+current_version = 3.2.1
+files = fileX fileY fileZ
+""")
+
+    bumpversion.__warningregistry__.clear()
+    warnings.resetwarnings()
+    warnings.simplefilter('always')
+    with warnings.catch_warnings(record=True) as recwarn:
+        main(['patch'])
+
+    w = recwarn.pop()
+    assert issubclass(w.category, PendingDeprecationWarning)
+    assert "'files =' configuration is will be deprecated, please use" in str(w.message)
+
+
+def test_deprecation_warning_multiple_files_cli(tmpdir):
+    tmpdir.chdir()
+
+    tmpdir.join("fileA").write("1.2.3")
+    tmpdir.join("fileB").write("1.2.3")
+    tmpdir.join("fileC").write("1.2.3")
+
+    bumpversion.__warningregistry__.clear()
+    warnings.resetwarnings()
+    warnings.simplefilter('always')
+    with warnings.catch_warnings(record=True) as recwarn:
+        main(['--current-version', '1.2.3', 'patch', 'fileA', 'fileB', 'fileC'])
+
+    w = recwarn.pop()
+    assert issubclass(w.category, PendingDeprecationWarning)
+    assert 'Giving multiple files on the command line will be deprecated' in str(w.message)
+
