@@ -283,10 +283,14 @@ class ConfiguredVersionPartConfiguration(object):
         if optional_value is None:
             optional_value = values[0]
 
+        assert optional_value in values
+
         self.optional_value = optional_value
 
         if first_value is None:
             first_value = values[0]
+
+        assert first_value in values
 
         self.first_value = first_value
 
@@ -303,6 +307,8 @@ class NumericVersionPartConfiguration(VersionPartConfiguration):
 
         if first_value is None:
             first_value = "0"
+
+        int(first_value) # make sure that it's numeric
 
         self.first_value = first_value
 
