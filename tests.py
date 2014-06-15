@@ -1159,6 +1159,37 @@ def test_bump_non_numeric_parts(tmpdir, capsys):
 
     assert '1.6.dev' == tmpdir.join("with_prereleases.txt").read()
 
+def test_optional_value_from_documentation(tmpdir):
+
+    tmpdir.join("optional_value_fromdoc.txt").write("1.alpha")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+      [bumpversion]
+      current_version = 1.alpha
+      parse = (?P<num>\d+)\.(?P<release>.*)
+      serialize =
+        {num}.{release}
+        {num}
+  
+      [bumpversion:part:release]
+      optional_value = gamma
+      values =
+        alpha
+        beta
+        gamma
+
+      [bumpversion:file:optional_value_fromdoc.txt]
+      """))
+
+    main(['release', '--verbose'])
+
+    assert '1.beta' == tmpdir.join("optional_value_fromdoc.txt").read()
+
+    main(['release', '--verbose'])
+
+    assert '1' == tmpdir.join("optional_value_fromdoc.txt").read()
+
 def test_python_prerelease_release_postrelease(tmpdir, capsys):
     tmpdir.join("python386.txt").write("1.0a")
     tmpdir.chdir()

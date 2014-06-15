@@ -11,7 +11,7 @@ commits and tags:
 - version formats are highly configurable
 - works without any VCS, but happily reads tag information from and writes
   commits and tags to Git and Mercurial if available
-- not specific to any programming language, just handles text files.
+- just handles text files, so it's not specific to any programming language
 
 .. image:: https://travis-ci.org/peritus/bumpversion.png?branch=master
   :target: https://travis-ci.org/peritus/bumpversion
@@ -32,140 +32,248 @@ You can download and install the latest version of this software from the Python
 Usage
 =====
 
+There are two modes of operation: On the command line for single-file operation
+and using a `configuration file <#configuration>`_ for more complex multi-file
+operations.
+
 ::
 
-    bumpversion [options] part [file [file ...]]
+    bumpversion [options] part [file]
 
-Config file .bumpversion.cfg
-++++++++++++++++++++++++++++
 
-All options can optionally be specified in a config file called ``.bumpversion.cfg`` so that once you know how ``bumpversion`` needs to be configured for one particular software package, you can run it without specifying options later. You should add that file to VCS so others can also bump versions.
+``part`` (required)
+  The part of the version to increase, e.g. ``minor``.
 
-Options on the command line take precedence over those from the config file, which take precedence over those derived from the environment and then from the defaults.
+  Valid values include those given in the ``--serialize`` / ``--parse`` option.
+
+  Example `bumping 0.5.1 to 0.6.0`::
+
+     bumpversion --current-version 0.5.1 minor src/VERSION
+
+``[file]``
+  **default: none** (optional)
+
+  The file that will be modified.
+
+  If not given, the list of ``[bumpversion:file:…]`` sections from the
+  configuration file will be used. If no files are mentioned on the
+  configuration file either, are no files will be modified.
+
+  Example `bumping 1.1.9 to 2.0.0`::
+
+     bumpversion --current-version 1.1.9 major setup.py
+
+Configuration
++++++++++++++
+
+All options can optionally be specified in a config file called
+``.bumpversion.cfg`` so that once you know how ``bumpversion`` needs to be
+configured for one particular software package, you can run it without
+specifying options later. You should add that file to VCS so others can also
+bump versions.
+
+Options on the command line take precedence over those from the config file,
+which take precedence over those derived from the environment and then from the
+defaults.
 
 Example ``.bumpversion.cfg``::
 
   [bumpversion]
   current_version = 0.2.9
-  files = setup.py
   commit = True
   tag = True
 
+  [bumpversion:file:setup.py]
 
-Options
-=======
-``part``
-  Part of the version to increase.
+Global configuration
+--------------------
 
-  Valid values include those given in the ``--serialize`` / ``--parse`` option.
+General configuration is grouped in a ``[bumpversion]`` section.
 
-  Example `bumping to 0.6.0`::
+``current_version =``
+  **no default value** (required)
 
-     bumpversion --current-version 0.5.1 minor setup.py
+  The current version of the software package before bumping.
 
-  Example `bumping to 2.0.0`::
+  Also available as ``--current-version`` (e.g. ``bumpversion --current-version 0.5.1 patch setup.py``)
 
-     bumpversion --current-version 1.1.9 major setup.py
+``new_version =``
+  **no default value** (optional)
 
-``[file [file ...]]`` / ``files =``
-  **default: empty**
+  The version of the software package after the increment. If not given will be
+  automatically determined.
 
-  The files where to search and replace version strings
+  Also available as ``--new-version`` (e.g. `to go from 0.5.1 directly to
+  0.6.1`: ``bumpversion --current-version 0.5.1 --new-version 0.6.1 patch
+  setup.py``).
 
-  Command line example::
-
-     bumpversion patch setup.py src/VERSION.txt
-
-  Config file example::
-
-    [bumpversion]
-    files = setup.py src/VERSION.txt
-
-``--current-version`` / ``current_version =``
-  **no default value**
-
-  The current version of the software package.
-
-  Example::
-
-     bumpversion --current-version 0.5.1 patch setup.py
-
-``--new-version`` / ``new_version =``
-  **no default value**
-
-  The version of the software after the increment
-
-  Example (`Go from 0.5.1 directly to 0.6.1`)::
-
-      bumpversion --current-version 0.5.1 --new-version 0.6.1 patch setup.py
-
-``--parse`` / ``parse =``
-  **default:** "``(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)``"
-
-  Regular expression (using `Python regular expression syntax <http://docs.python.org/2/library/re.html#regular-expression-syntax>`_) on how to find and parse the version string.
-
-  Is required to parse all strings produced by ``--serialize``. Named matching groups ("``(?P<name>...)``") provide values to as the ``part`` argument.
-
-``--serialize`` / ``serialize =``
-  **default:** "``{major}.{minor}.{patch}``"
-
-  Template specifying how to serialize the version parts back to a version string.
-
-  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are parsed values of the named groups specified in ``--parse`` as well as all environment variables (prefixed with ``$``).
-
-  Can be specified multiple times, bumpversion will try the serialization
-  formats beginning with the first and choose the last one where all values can
-  be represented.
-
-  Given the example below, the new version *1.9* it will be serialized as
-  ``1.9``, but the version *2.0* will be serialized as ``2``.
-
-  Multiple values on the command line are given like ``--serialize
-  {major}.{minor} --serialize {major}``, the configuration file uses multiple
-  lines::
-
-    serialize =
-      {major}.{minor}
-      {major}
-
-``(--tag | --no-tag)`` / ``tag = (True | False)``
-  **default:** `Don't create a tag`
+``tag = (True | False)``
+  **default:** False (`Don't create a tag`)
 
   Whether to create a tag, that is the new version, prefixed with the character
   "``v``". If you are using git, don't forget to ``git-push`` with the
   ``--tags`` flag.
 
-``--tag-name`` / ``tag_name =``
-  **default:** "``v{new_version}``"
+  Also available on the command line as ``(--tag | --no-tag)``.
+
+``tag_name =``
+  **default:** "``v{new_version}``" 
 
   The name of the tag that will be created. Only valid when using ``--tag`` / ``tag = True``.
 
-  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are ``current_version`` and ``new_version`` as well as all environment variables (prefixed with ``$``). You can also use the variables ``now`` or ``utcnow`` to get a current timestamp. Both accept datetime formatting (when used like as in ``{now:%d.%m.%Y}``).
+  This is templated using the `Python Format String Syntax
+  <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
+  Available in the template context are ``current_version`` and ``new_version``
+  as well as all environment variables (prefixed with ``$``). You can also use
+  the variables ``now`` or ``utcnow`` to get a current timestamp. Both accept
+  datetime formatting (when used like as in ``{now:%d.%m.%Y}``).
 
+  Also available as ``--tag-name`` (e.g. ``bumpversion --message 'Jenkins Build
+  {$BUILD_NUMBER}: {new_version}' patch``).
 
-  Example::
+``commit = (True | False)``
+  **default:** ``False`` (`Don't create a commit`)
 
-    bumpversion --message 'Jenkins Build {$BUILD_NUMBER}: {new_version}' patch
+  Whether to create a commit using git or Mercurial.
 
+  Also available as ``(--commit | --no-commit)``.
 
-``(--commit | --no-commit)`` / ``commit = (True | False)``
-  **default:** `Don't create a commit`
-
-  Whether to create a commit
-
-``--message`` / ``message =``
+``message =`` 
   **default:** "``Bump version: {current_version} → {new_version}``"
 
   The commit message to use when creating a commit. Only valid when using ``--commit`` / ``commit = True``.
 
-  This is templated using the `Python Format String Syntax <http://docs.python.org/2/library/string.html#format-string-syntax>`_. Available in the template context are ``current_version`` and ``new_version`` as well as all environment variables (prefixed with ``$``). You can also use the variables ``now`` or ``utcnow`` to get a current timestamp. Both accept datetime formatting (when used like as in ``{now:%d.%m.%Y}``).
+  This is templated using the `Python Format String Syntax
+  <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
+  Available in the template context are ``current_version`` and ``new_version``
+  as well as all environment variables (prefixed with ``$``). You can also use
+  the variables ``now`` or ``utcnow`` to get a current timestamp. Both accept
+  datetime formatting (when used like as in ``{now:%d.%m.%Y}``).
+
+  Also available as ``--message`` (e.g.: ``bumpversion --message
+  '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}' patch``)
+
+
+Part specific configuration
+---------------------------
+
+A version string consists of one or more parts, e.g. the version ``1.0.2``
+has three parts, separated by a dot (``.``) character. In the default
+configuration these parts are named `major`, `minor`, `patch`, however you can
+customize that using the ``parse``/``serialize`` option.
+
+By default all parts considered numeric, that is their initial value is ``0``
+and they are increased as integers. Also, the value ``0`` is considered to be
+optional if it's not needed for serialization, i.e. the version ``1.4.0`` is
+equal to ``1.4`` if ``{major}.{minor}`` is given as a ``serialize`` value.
+
+For advanced versioning schemes, non-numeric parts may be desirable (e.g. to
+identify `alpha or beta versions
+<http://en.wikipedia.org/wiki/Software_release_life_cycle#Stages_of_development>`_,
+to indicate the stage of development, the flavor of the software package or
+a release name). To do so, you can use a ``[bumpversion:part:…]`` section
+containing the part's name (e.g. a part named ``release_name`` is configured in
+a section called ``[bumpversion:part:release_name]``.
+
+The following options are valid inside a part configuration:
+
+``values``
+  **default**: numeric (i.e. ``0``, ``1``, ``2``, …)
+
+  Explicit list of all values that will be iterated when bumping that specific
+  part.
 
   Example::
 
-    bumpversion --message '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}' patch
+    [bumpversion:part:release_name]
+    values =
+      witty-warthog
+      ridiculous-rat
+      marvelous-mantis
+
+``optional_value``
+  **default**: The first entry in ``values =``.
+
+  If the value of the part matches this value it is considered optional, i.e.
+  it's representation in a ``--serialize`` possibility is not required.
+
+  Example::
+
+    [bumpversion]
+    current_version = 1.alpha
+    parse = (?P<num>\d+)\.(?P<release>.*)
+    serialize =
+      {num}.{release}
+      {num}
+
+    [bumpversion:part:release]
+    optional_value = gamma
+    values =
+      alpha
+      beta
+      gamma
+
+  Here, ``bumpversion release`` would bump ``1.alpha`` to ``1.beta``. Executing
+  ``bumpversion release`` again would bump ``1.beta`` to ``1``, because
+  `release` being ``gamma`` is configured optional.
+
+``first_value``
+  **default**: The first entry in ``values =``.
+
+  When the part is reset, the value will be set to the value specified here.
+
+File specific configuration
+---------------------------
+
+``[bumpversion:file:…]``
+
+``parse =``
+  **default:** "``(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)``"
+
+  Regular expression (using `Python regular expression syntax
+  <http://docs.python.org/2/library/re.html#regular-expression-syntax>`_) on
+  how to find and parse the version string.
+
+  Is required to parse all strings produced by ``serialize =``. Named matching
+  groups ("``(?P<name>...)``") provide values to as the ``part`` argument.
+
+  Also available as ``--parse``
+
+``serialize =``
+  **default:** "``{major}.{minor}.{patch}``"
+
+  Template specifying how to serialize the version parts back to a version
+  string.
+
+  This is templated using the `Python Format String Syntax
+  <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
+  Available in the template context are parsed values of the named groups
+  specified in ``parse =`` as well as all environment variables (prefixed with
+  ``$``).
+
+  Can be specified multiple times, bumpversion will try the serialization
+  formats beginning with the first and choose the last one where all values can
+  be represented like this::
+
+    serialize =
+      {major}.{minor}
+      {major}
+
+  Given the example above, the new version *1.9* it will be serialized as
+  ``1.9``, but the version *2.0* will be serialized as ``2``.
+
+  Also available as ``--serialize``. Multiple values on the command line are
+  given like ``--serialize {major}.{minor} --serialize {major}``
+
+
+Options
+=======
+
+Most of the configuration values above can also be given as an option.
+Additionally, the following options are available:
 
 ``--dry-run, -n``
-  Don't touch any files, just pretend. Best used with '--verbose'.
+  Don't touch any files, just pretend. Best used with ``--verbose``.
 
 ``--verbose``
   Print useful information to stderr
@@ -174,7 +282,7 @@ Options
   List machine readable information to stdout for consumption by other
   programs.
 
-  Example::
+  Example output::
 
     current_version=0.0.18
     new_version=0.0.19
@@ -185,7 +293,10 @@ Options
 Development
 ===========
 
-Development of this happens on GitHub, patches including tests, documentation are very welcome, as well as bug reports! Also please open an issue if this tool does not support every aspect of bumping versions in your development workflow, as it is intended to be very versatile.
+Development of this happens on GitHub, patches including tests, documentation
+are very welcome, as well as bug reports! Also please open an issue if this
+tool does not support every aspect of bumping versions in your development
+workflow, as it is intended to be very versatile.
 
 License
 =======
@@ -197,7 +308,23 @@ Changes
 
 **unreleased**
 
-- bumpversion is now licensed under the MIT License (`#47 <https://github.com/peritus/bumpversion/issues/47>`_)
+This is a major one, containing two larger features, that require some changes
+in the configuration format. This release is fully backwards compatible to
+*v0.4.1*, however deprecates two uses that will be removed in a future version.
+
+- New feature: `Part specific configuration <#part-specific-configuration>`_
+- New feature: `File specific configuration <#file-specific-configuration>`_ 
+- New feature: parse option can now span multiple line (allows to comment complex
+  regular expressions. See `re.VERBOSE in the Python documentation
+  <https://docs.python.org/library/re.html#re.VERBOSE>`_ for details, `this
+  testcase
+  <https://github.com/peritus/bumpversion/blob/165e5d8bd308e9b7a1a6d17dba8aec9603f2d063/tests.py#L1202-L1211>`_
+  as an example.)
+- Fix: Save the files in binary mode to avoid mutating newlines (thanks @jaraco `#45 <https://github.com/peritus/bumpversion/pull/45>`_). 
+- License: bumpversion is now licensed under the MIT License (`#47 <https://github.com/peritus/bumpversion/issues/47>`_)
+
+- Deprecate multiple files on the command line (use a `configuration file <#configuration>`_ instead, or invoke ``bumpversion`` multiple times)
+- Deprecate 'files =' configuration (use `file specific configuration <#file-specific-configuration>`_ instead)
 
 **v0.4.1**
 
