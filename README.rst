@@ -187,8 +187,17 @@ Development
 
 Development of this happens on GitHub, patches including tests, documentation are very welcome, as well as bug reports! Also please open an issue if this tool does not support every aspect of bumping versions in your development workflow, as it is intended to be very versatile.
 
+License
+=======
+
+bumpversion is licensed under the MIT License - see the LICENSE.rst file for details
+
 Changes
 =======
+
+**unreleased**
+
+- bumpversion is now licensed under the MIT License (`#47 <https://github.com/peritus/bumpversion/issues/47>`_)
 
 **v0.4.1**
 
