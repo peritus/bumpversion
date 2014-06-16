@@ -1546,3 +1546,42 @@ def test_deprecation_warning_multiple_files_cli(tmpdir):
     assert issubclass(w.category, PendingDeprecationWarning)
     assert 'Giving multiple files on the command line will be deprecated' in str(w.message)
 
+
+def test_file_specific_config_inherits_parse_serialize(tmpdir):
+
+    tmpdir.chdir()
+
+    tmpdir.join("todays_icecream").write("14-chocolate")
+    tmpdir.join("todays_cake").write("14-chocolate")
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+      [bumpversion]
+      current_version = 14-chocolate
+      parse = (?P<major>\d+)(\-(?P<flavor>[a-z]+))?
+      serialize = 
+      	{major}-{flavor}
+      	{major}
+
+      [bumpversion:file:todays_icecream]
+      serialize = 
+      	{major}-{flavor}
+
+      [bumpversion:file:todays_cake]
+
+      [bumpversion:part:flavor]
+      values = 
+      	vanilla
+      	chocolate
+      	strawberry
+      """))
+
+    main(['flavor'])
+
+    assert '14-strawberry' == tmpdir.join("todays_cake").read()
+    assert '14-strawberry' == tmpdir.join("todays_icecream").read()
+
+    main(['major'])
+
+    assert '15-vanilla' == tmpdir.join("todays_icecream").read()
+    assert '15' == tmpdir.join("todays_cake").read()
+
