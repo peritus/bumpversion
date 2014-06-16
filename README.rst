@@ -313,6 +313,8 @@ Changes
 
 **unreleased**
 
+**v0.5.0**
+
 This is a major one, containing two larger features, that require some changes
 in the configuration format. This release is fully backwards compatible to
 *v0.4.1*, however deprecates two uses that will be removed in a future version.
