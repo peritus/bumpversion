@@ -1,6 +1,13 @@
+import re
 from setuptools import setup
 
 description = 'Version-bump your software with a single command!'
+
+long_description = re.sub(
+  "\`(.*)\<#.*\>\`\_",
+  r"\1",
+  str(open('README.rst', 'rb').read()).replace(description, '')
+)
 
 setup(
     name='bumpversion',
@@ -11,7 +18,7 @@ setup(
     license='MIT',
     packages=['bumpversion'],
     description=description,
-    long_description=str(open('README.rst', 'rb').read()).replace(description, ''),
+    long_description=long_description,
     entry_points={
         'console_scripts': [
             'bumpversion = bumpversion:main',
