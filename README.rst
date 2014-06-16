@@ -177,7 +177,7 @@ a section called ``[bumpversion:part:release_name]``.
 
 The following options are valid inside a part configuration:
 
-``values``
+``values =``
   **default**: numeric (i.e. ``0``, ``1``, ``2``, …)
 
   Explicit list of all values that will be iterated when bumping that specific
@@ -191,7 +191,7 @@ The following options are valid inside a part configuration:
       ridiculous-rat
       marvelous-mantis
 
-``optional_value``
+``optional_value =``
   **default**: The first entry in ``values =``.
 
   If the value of the part matches this value it is considered optional, i.e.
@@ -217,7 +217,7 @@ The following options are valid inside a part configuration:
   ``bumpversion release`` again would bump ``1.beta`` to ``1``, because
   `release` being ``gamma`` is configured optional.
 
-``first_value``
+``first_value =``
   **default**: The first entry in ``values =``.
 
   When the part is reset, the value will be set to the value specified here.
