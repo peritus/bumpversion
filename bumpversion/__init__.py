@@ -104,8 +104,9 @@ class Git(BaseVCS):
         ]
 
         if lines:
-            assert False, "Git working directory not clean:\n{}".format(
-                b"\n".join(lines))
+            raise WorkingDirectoryIsDirtyException(
+                "Git working directory is not clean:\n{}".format(
+                    b"\n".join(lines)))
 
     @classmethod
     def latest_tag_info(cls):
@@ -171,8 +172,9 @@ class Mercurial(BaseVCS):
         ]
 
         if lines:
-            assert False, "Mercurial working directory not clean:\n{}".format(
-                b"\n".join(lines))
+            raise WorkingDirectoryIsDirtyException(
+                "Mercurial working directory is not clean:\n{}".format(
+                    b"\n".join(lines)))
 
     @classmethod
     def add_path(cls, path):
@@ -359,6 +361,10 @@ class IncompleteVersionRepresenationException(Exception):
         self.message = message
 
 class MissingValueForSerializationException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+class WorkingDirectoryIsDirtyException(Exception):
     def __init__(self, message):
         self.message = message
 
@@ -601,6 +607,10 @@ def main(original_args=None):
     parser1.add_argument(
         '--list', action='store_true', default=False,
         help='List machine readable information', required=False)
+
+    parser1.add_argument(
+        '--allow-dirty', action='store_true', default=False,
+        help="Don't abort if working directory is dirty", required=False)
 
     known_args, remaining_argv = parser1.parse_known_args(args)
 
@@ -856,7 +866,13 @@ def main(original_args=None):
 
     for vcs in VCS:
         if vcs.is_usable():
-            vcs.assert_nondirty()
+            try:
+                vcs.assert_nondirty()
+            except WorkingDirectoryIsDirtyException as e:
+                if not defaults['allow_dirty']:
+                    logger.warn(
+                        "{}\n\nUse --allow-dirty to override this if you know what you're doing.".format(e.message))
+                    raise
             break
         else:
             vcs = None

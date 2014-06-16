@@ -275,6 +275,11 @@ Additionally, the following options are available:
 ``--dry-run, -n``
   Don't touch any files, just pretend. Best used with ``--verbose``.
 
+``--allow-dirty``
+  Normally, bumpversion will abort if the working directory is dirty to protect
+  yourself from releasing unversioned files and/or overwriting unsaved changes.
+  Use this option to override this check.
+
 ``--verbose``
   Print useful information to stderr
 
@@ -320,6 +325,7 @@ in the configuration format. This release is fully backwards compatible to
   testcase
   <https://github.com/peritus/bumpversion/blob/165e5d8bd308e9b7a1a6d17dba8aec9603f2d063/tests.py#L1202-L1211>`_
   as an example.)
+- New feature: ``--allow-dirty`` (`#42 <https://github.com/peritus/bumpversion/pull/42>`_).
 - Fix: Save the files in binary mode to avoid mutating newlines (thanks @jaraco `#45 <https://github.com/peritus/bumpversion/pull/45>`_). 
 - License: bumpversion is now licensed under the MIT License (`#47 <https://github.com/peritus/bumpversion/issues/47>`_)
 

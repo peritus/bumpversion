@@ -15,8 +15,9 @@ from shlex import split as shlex_split
 from textwrap import dedent
 from functools import partial
 
-from bumpversion import main, DESCRIPTION
 import bumpversion
+
+from bumpversion import main, DESCRIPTION, WorkingDirectoryIsDirtyException
 
 SUBPROCESS_ENV = dict(
     list(environ.items()) + [('HGENCODING', 'utf-8')]
@@ -45,11 +46,11 @@ def _mock_calls_to_string(called_mock):
 
 
 EXPECTED_USAGE = ("""
-usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--parse REGEX]
-               [--serialize FORMAT] [--search SEARCH] [--replace REPLACE]
-               [--current-version VERSION] [--dry-run] --new-version VERSION
-               [--commit | --no-commit] [--tag | --no-tag]
-               [--tag-name TAG_NAME] [--message COMMIT_MSG]
+usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]
+               [--parse REGEX] [--serialize FORMAT] [--search SEARCH]
+               [--replace REPLACE] [--current-version VERSION] [--dry-run]
+               --new-version VERSION [--commit | --no-commit]
+               [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
                part [file [file ...]]
 
 %s
@@ -64,6 +65,8 @@ optional arguments:
                         (default: .bumpversion.cfg)
   --verbose             Print verbose logging to stderr (default: 0)
   --list                List machine readable information (default: False)
+  --allow-dirty         Don't abort if working directory is dirty (default:
+                        False)
   --parse REGEX         Regex parsing the version string (default:
                         (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+))
   --serialize FORMAT    How to format what is parsed back to a version
@@ -125,7 +128,7 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     out, err = capsys.readouterr()
 
     if vcs == "git":
-        assert "usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--parse REGEX]" in out
+        assert "usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
     else:
         assert out == EXPECTED_USAGE
@@ -306,9 +309,32 @@ def test_dirty_workdir(tmpdir, vcs):
 
     check_call([vcs, "add", "dirty"])
 
-    with pytest.raises(AssertionError):
-        main(['patch', '--current-version', '1', '--new-version', '2', 'file7'])
+    with pytest.raises(WorkingDirectoryIsDirtyException):
+        with mock.patch("bumpversion.logger") as logger:
+            main(['patch', '--current-version', '1', '--new-version', '2', 'file7'])
 
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert 'working directory is not clean' in actual_log
+    assert "Use --allow-dirty to override this if you know what you're doing." in actual_log
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_force_dirty_workdir(tmpdir, vcs):
+    tmpdir.chdir()
+    check_call([vcs, "init"])
+    tmpdir.join("dirty2").write("i'm dirty! 1.1.1")
+
+    check_call([vcs, "add", "dirty2"])
+
+    main([
+        'patch',
+        '--allow-dirty',
+        '--current-version',
+        '1.1.1',
+        'dirty2'
+    ])
+
+    assert "i'm dirty! 1.1.2" == tmpdir.join("dirty2").read()
 
 def test_bump_major(tmpdir):
     tmpdir.join("fileMAJORBUMP").write("4.2.8")
