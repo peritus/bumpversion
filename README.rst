@@ -313,6 +313,8 @@ Changes
 
 **unreleased**
 
+**v0.5.1-dev**
+
 **v0.5.0**
 
 This is a major one, containing two larger features, that require some changes
