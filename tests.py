@@ -37,6 +37,17 @@ xfail_if_no_hg = pytest.mark.xfail(
   reason="hg is not installed"
 )
 
+try:
+    bumpversion.RawConfigParser(empty_lines_in_values=False)
+    using_old_configparser = False
+except TypeError:
+    using_old_configparser = True
+
+xfail_if_old_configparser = pytest.mark.xfail(
+  using_old_configparser,
+  reason="configparser doesn't support empty_lines_in_values"
+)
+
 def _mock_calls_to_string(called_mock):
     return ["{}|{}|{}".format(
         name,
@@ -1614,3 +1625,46 @@ def test_multiline_search_is_found(tmpdir):
       C
       10.0.0
     """) == tmpdir.join("the_alphabet.txt").read()
+
+@xfail_if_old_configparser
+def test_configparser_empty_lines_in_values(tmpdir):
+
+    tmpdir.chdir()
+
+    tmpdir.join("CHANGES.rst").write(dedent("""
+    My changelog
+    ============
+
+    current
+    -------
+
+    """))
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 0.4.1
+
+    [bumpversion:file:CHANGES.rst]
+    search =
+      current
+      -------
+    replace = current
+      -------
+
+
+      {new_version}
+      -------
+      """).strip())
+
+    main(['patch'])
+    assert dedent("""
+      My changelog
+      ============
+      current
+      -------
+
+
+      0.4.2
+      -------
+
+    """) == tmpdir.join("CHANGES.rst").read()
