@@ -313,7 +313,8 @@ Changes
 
 **unreleased**
 
-**v0.5.1-dev**
+- Fix: Log actual content of the config file, not what ConfigParser prints
+  after reading it.
 
 **v0.5.0**
 

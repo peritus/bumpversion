@@ -660,13 +660,13 @@ def main(original_args=None):
 
     if config_file_exists:
 
+        logger.info("Reading config file {}:".format(known_args.config_file))
+        logger.info(io.open(known_args.config_file, 'rt', encoding='utf-8').read())
+
         config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
 
         log_config = StringIO()
         config.write(log_config)
-
-        logger.info("Reading config file {}:".format(known_args.config_file))
-        logger.info(log_config.getvalue())
 
         if 'files' in dict(config.items("bumpversion")):
             warnings.warn(

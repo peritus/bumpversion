@@ -906,7 +906,8 @@ def test_complex_info_logging(tmpdir, capsys):
         serialize =
           {major}.{minor}.{patch}
           {major}.{minor}
-        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?"""))
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+        """).strip())
 
     with mock.patch("bumpversion.logger") as logger:
         main(['patch'])
@@ -917,12 +918,10 @@ def test_complex_info_logging(tmpdir, capsys):
         info|[bumpversion]
         files = fileE
         current_version = 0.4
-        serialize = 
-        	{major}.{minor}.{patch}
-        	{major}.{minor}
-        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
-        
-        |
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?|
         info|Parsing version '0.4' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
         info|Parsed the following values: major=0, minor=4, patch=0|
         info|Attempting to increment part 'patch'|
@@ -967,7 +966,8 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         serialize =
           {major}.{minor}.{patch}
           {major}.{minor}
-        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?"""))
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?"""
+    ).strip())
 
     check_call([vcs, "init"])
     check_call([vcs, "add", "dont_touch_me.txt"])
@@ -984,12 +984,10 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         current_version = 0.8
         commit = True
         tag = True
-        serialize = 
-        	{major}.{minor}.{patch}
-        	{major}.{minor}
-        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
-
-        |
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?|
         info|Parsing version '0.8' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
         info|Parsed the following values: major=0, minor=8, patch=0|
         info|Attempting to increment part 'patch'|
@@ -1042,7 +1040,7 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         current_version = 0.3.3
         commit = False
         tag = False
-        """))
+        """).strip())
 
     check_call([vcs, "init"])
     check_call([vcs, "add", "please_touch_me.txt"])
@@ -1058,9 +1056,7 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         files = please_touch_me.txt
         current_version = 0.3.3
         commit = False
-        tag = False
-        
-        |
+        tag = False|
         info|Parsing version '0.3.3' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
         info|Parsed the following values: major=0, minor=3, patch=3|
         info|Attempting to increment part 'patch'|
@@ -1108,7 +1104,7 @@ def test_listing(tmpdir, vcs):
         current_version = 0.5.5
         commit = False
         tag = False
-        """))
+        """).strip())
 
     check_call([vcs, "init"])
     check_call([vcs, "add", "please_list_me.txt"])
@@ -1143,7 +1139,7 @@ def test_no_list_no_stdout(tmpdir, vcs):
         current_version = 0.5.5
         commit = False
         tag = False
-        """))
+        """).strip())
 
     check_call([vcs, "init"])
     check_call([vcs, "add", "please_dont_list_me.txt"])
@@ -1175,7 +1171,7 @@ def test_bump_non_numeric_parts(tmpdir, capsys):
         values =
           dev
           gamma
-        """))
+        """).strip())
 
     main(['release', '--verbose'])
 
@@ -1206,7 +1202,7 @@ def test_optional_value_from_documentation(tmpdir):
         gamma
 
       [bumpversion:file:optional_value_fromdoc.txt]
-      """))
+      """).strip())
 
     main(['release', '--verbose'])
 
@@ -1384,7 +1380,7 @@ def test_search_replace_to_avoid_updating_unconcerned_lines(tmpdir, capsys):
       [bumpversion:file:requirements.txt]
       search = MyProject=={current_version}
       replace = MyProject=={new_version}
-      """))
+      """).strip())
 
     with mock.patch("bumpversion.logger") as logger:
         main(['minor', '--verbose'])
@@ -1397,9 +1393,7 @@ def test_search_replace_to_avoid_updating_unconcerned_lines(tmpdir, capsys):
 
         [bumpversion:file:requirements.txt]
         search = MyProject=={current_version}
-        replace = MyProject=={new_version}
-
-        |
+        replace = MyProject=={new_version}|
         info|Parsing version '1.5.6' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
         info|Parsed the following values: major=1, minor=5, patch=6|
         info|Attempting to increment part 'minor'|
