@@ -315,6 +315,7 @@ Changes
 
 - Fix: Log actual content of the config file, not what ConfigParser prints
   after reading it.
+- Fix: Support multiline values in ``search =``
 
 **v0.5.0**
 

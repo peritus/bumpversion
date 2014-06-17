@@ -1579,3 +1579,38 @@ def test_file_specific_config_inherits_parse_serialize(tmpdir):
     assert '15-vanilla' == tmpdir.join("todays_icecream").read()
     assert '15' == tmpdir.join("todays_cake").read()
 
+
+def test_multiline_search_is_found(tmpdir):
+
+    tmpdir.chdir()
+
+    tmpdir.join("the_alphabet.txt").write(dedent("""
+      A
+      B
+      C
+    """))
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 9.8.7
+
+    [bumpversion:file:the_alphabet.txt]
+    search =
+      A
+      B
+      C
+    replace =
+      A
+      B
+      C
+      {new_version}
+      """).strip())
+
+    main(['major'])
+
+    assert dedent("""
+      A
+      B
+      C
+      10.0.0
+    """) == tmpdir.join("the_alphabet.txt").read()

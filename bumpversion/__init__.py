@@ -215,10 +215,20 @@ class ConfiguredFile(object):
 
     def contains(self, search):
         with io.open(self.path, 'rb') as f:
+            search_lines = search.splitlines()
+            lookbehind = []
+
             for lineno, line in enumerate(f.readlines()):
-                if search in line.decode('utf-8'):
+                lookbehind.append(line.decode('utf-8').rstrip("\n"))
+
+                if len(lookbehind) > len(search_lines):
+                    lookbehind = lookbehind[1:]
+
+                if (search_lines[0] in lookbehind[0] and
+                   search_lines[-1] in lookbehind[-1] and
+                   search_lines[1:-1] == lookbehind[1:-1]):
                     logger.info("Found '{}' in {} at line {}: {}".format(
-                        search, self.path, lineno, line.decode('utf-8').rstrip()))
+                        search, self.path, lineno - (len(lookbehind) - 1), line.decode('utf-8').rstrip()))
                     return True
         return False
 
