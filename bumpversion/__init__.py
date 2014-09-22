@@ -607,7 +607,7 @@ def main(original_args=None):
     parser1 = argparse.ArgumentParser(add_help=False)
 
     parser1.add_argument(
-        '--config-file', default='.bumpversion.cfg', metavar='FILE',
+        '--config-file', default=None, metavar='FILE',
         help='Config file to read most of the variables from', required=False)
 
     parser1.add_argument(
@@ -662,7 +662,15 @@ def main(original_args=None):
     config = RawConfigParser('')
     config.add_section('bumpversion')
 
-    config_file_exists = os.path.exists(known_args.config_file)
+    if known_args.config_file is not None:
+        config_file = known_args.config_file
+    elif not os.path.exists('.bumpversion.cfg') and \
+            os.path.exists('setup.cfg'):
+        config_file = 'setup.cfg'
+    else:
+        config_file = '.bumpversion.cfg'
+
+    config_file_exists = os.path.exists(config_file)
 
     part_configs = {}
 
@@ -670,10 +678,10 @@ def main(original_args=None):
 
     if config_file_exists:
 
-        logger.info("Reading config file {}:".format(known_args.config_file))
-        logger.info(io.open(known_args.config_file, 'rt', encoding='utf-8').read())
+        logger.info("Reading config file {}:".format(config_file))
+        logger.info(io.open(config_file, 'rt', encoding='utf-8').read())
 
-        config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
+        config.readfp(io.open(config_file, 'rt', encoding='utf-8'))
 
         log_config = StringIO()
         config.write(log_config)
@@ -745,8 +753,8 @@ def main(original_args=None):
                 files.append(ConfiguredFile(filename, VersionConfig(**section_config)))
 
     else:
-        message = "Could not read config file at {}".format(known_args.config_file)
-        if known_args.config_file != parser1.get_default('config_file'):
+        message = "Could not read config file at {}".format(config_file)
+        if known_args.config_file != None:
             raise argparse.ArgumentTypeError(message)
         else:
             logger.info(message)
@@ -916,14 +924,14 @@ def main(original_args=None):
 
         logger.info("{} to config file {}:".format(
             "Would write" if not write_to_config_file else "Writing",
-            known_args.config_file,
+            config_file,
         ))
 
         config.write(new_config)
         logger.info(new_config.getvalue())
 
         if write_to_config_file:
-            with io.open(known_args.config_file, 'wb') as f:
+            with io.open(config_file, 'wb') as f:
                 f.write(new_config.getvalue().encode('utf-8'))
 
     except UnicodeEncodeError:
@@ -933,7 +941,7 @@ def main(original_args=None):
         )
 
     if config_file_exists:
-        commit_files.append(known_args.config_file)
+        commit_files.append(config_file)
 
     if not vcs:
         return
