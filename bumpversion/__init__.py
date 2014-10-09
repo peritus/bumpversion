@@ -148,8 +148,11 @@ class Git(BaseVCS):
         subprocess.check_output(["git", "add", "--update", path])
 
     @classmethod
-    def tag(cls, name):
-        subprocess.check_output(["git", "tag", name])
+    def tag(cls, name, message):
+        command = ["git", "tag", name]
+        if message:
+            command += ['--message', message]
+        subprocess.check_output(command)
 
 
 class Mercurial(BaseVCS):
@@ -180,8 +183,11 @@ class Mercurial(BaseVCS):
         pass
 
     @classmethod
-    def tag(cls, name):
-        subprocess.check_output(["hg", "tag", name])
+    def tag(cls, name, message):
+        command = ["hg", "tag", name]
+        if message:
+            command += ['--message', message]
+        subprocess.check_output(command)
 
 VCS = [Git, Mercurial]
 
@@ -490,6 +496,7 @@ OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--search',
     '--replace',
     '--tag-name',
+    '--tag-message',
     '-m'
 ]
 
@@ -779,10 +786,12 @@ def main(original_args=None):
                          help='Tag name (only works with --tag)',
                          default=defaults.get('tag_name', 'v{new_version}'))
 
+    parser3.add_argument('--tag-message', metavar='TAG_MESSAGE', dest='tag_message',
+                         help='Tag message', default=defaults.get('tag_message', 'Bump version: {current_version} → {new_version}'))
+
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
                          help='Commit message',
                          default=defaults.get('message', 'Bump version: {current_version} → {new_version}'))
-
 
     file_names = []
     if 'files' in defaults:
@@ -913,12 +922,13 @@ def main(original_args=None):
         vcs.commit(message=commit_message)
 
     tag_name = args.tag_name.format(**vcs_context)
-    logger.info("{} '{}' in {}".format(
+    tag_message = args.tag_message.format(**vcs_context)
+    logger.info("{} '{}' {} in {}".format(
         "Would tag" if not do_tag else "Tagging",
         tag_name,
+        "with message '{}'".format(tag_message) if tag_message else "without message",
         vcs.__name__
     ))
 
     if do_tag:
-        vcs.tag(tag_name)
-
+        vcs.tag(tag_name, tag_message)
