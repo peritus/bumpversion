@@ -19,9 +19,7 @@ import bumpversion
 
 from bumpversion import main, DESCRIPTION, WorkingDirectoryIsDirtyException
 
-SUBPROCESS_ENV = dict(
-    list(environ.items()) + [('HGENCODING', 'utf-8')]
-)
+SUBPROCESS_ENV = bumpversion.SubEnv(HGENCODING='utf-8')
 
 call = partial(subprocess.call, env=SUBPROCESS_ENV)
 check_call = partial(subprocess.check_call, env=SUBPROCESS_ENV)

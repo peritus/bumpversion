@@ -62,6 +62,42 @@ time_context = {
     'utcnow': datetime.utcnow(),
 }
 
+
+class SubEnv(dict):
+
+    '''
+    Fix windows problem where envrionment passed to Popen cannot contain
+    Unicode.
+    '''
+
+    def __init__(self, initialenv=None, encoding=None, **kw):
+        initialenv = os.environ if initialenv is None else initialenv
+        encoding = encoding or sys.getdefaultencoding()
+        
+        if sys.platform == 'win32':
+            def encode(v):
+                '''
+                Encode `v` to desired encoding (`v` is most frequently a
+                regular string so first convert it to unicode). This
+                will throw UnicodeEncodeError if it cannot encode.
+                '''
+                return unicode(v).encode(encoding)
+            
+            for key, val in initialenv.items() + kw.items():
+                try:
+                    key = encode(key)
+                    val = encode(val)
+                    self[key] = val
+                except UnicodeEncodeError:
+                    # skip problem key/val (better than setting a modified
+                    # value).
+                    pass
+        else:
+            # assume other platforms hanldes Unicode transparently.
+            self.update(initialenv)
+            self.update(kw)
+    
+
 class BaseVCS(object):
 
     @classmethod
@@ -69,8 +105,8 @@ class BaseVCS(object):
         f = NamedTemporaryFile('wb', delete=False)
         f.write(message.encode('utf-8'))
         f.close()
-        subprocess.check_output(cls._COMMIT_COMMAND + [f.name], env=dict(
-            list(os.environ.items()) + [('HGENCODING', 'utf-8')]
+        subprocess.check_output(cls._COMMIT_COMMAND + [f.name], env=SubEnv(
+            HGENCODING='utf-8'
         ))
         os.unlink(f.name)
 
@@ -273,8 +309,9 @@ class ConfiguredFile(object):
             ))
 
         if not dry_run:
-            with io.open(self.path, 'wt', encoding='utf-8') as f:
-                f.write(file_content_after)
+            # open/write mode should match the open/read mode above
+            with io.open(self.path, 'wb') as f:
+                f.write(file_content_after.encode('utf-8'))
 
     def __str__(self):
         return self.path
