@@ -313,6 +313,8 @@ Changes
 
 **unreleased**
 
+- Fix: Don't crash in git repositories that have tags that contain hyphens
+    (`#51 <https://github.com/peritus/bumpversion/pull/51>`_) (`#52 <https://github.com/peritus/bumpversion/pull/52>`_).
 - Fix: Log actual content of the config file, not what ConfigParser prints
   after reading it.
 - Fix: Support multiline values in ``search =``
