@@ -1668,3 +1668,21 @@ def test_configparser_empty_lines_in_values(tmpdir):
       -------
 
     """) == tmpdir.join("CHANGES.rst").read()
+
+
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git")])
+def test_regression_tag_name_with_hyphens(tmpdir, capsys, vcs):
+    tmpdir.chdir()
+    tmpdir.join("somesource.txt").write("2014.10.22")
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "somesource.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "tag", "very-unrelated-but-containing-lots-of-hyphens"])
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 2014.10.22
+    """))
+
+    main(['patch', 'somesource.txt'])
