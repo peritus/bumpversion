@@ -440,7 +440,11 @@ class VersionConfig(object):
         self.replace = replace
 
     def _labels_for_format(self, serialize_format):
-        return (label for _, label, _, _ in Formatter().parse(serialize_format))
+        return (
+            label
+            for _, label, _, _ in Formatter().parse(serialize_format)
+            if label
+        )
 
     def order(self):
         # currently, order depends on the first given serialization format
