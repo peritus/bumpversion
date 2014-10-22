@@ -1686,3 +1686,24 @@ def test_regression_tag_name_with_hyphens(tmpdir, capsys, vcs):
     """))
 
     main(['patch', 'somesource.txt'])
+
+def test_regression_characters_after_last_label_serialize_string(tmpdir, capsys):
+    tmpdir.chdir()
+    tmpdir.join("bower.json").write('''
+    {
+      "version": "1.0.0",
+      "dependency1": "1.0.0",
+    }
+    ''')
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 1.0.0
+
+    [bumpversion:file:bower.json]
+    parse = "version": "(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"
+    serialize = "version": "{major}.{minor}.{patch}"
+    """))
+
+    main(['patch', 'bower.json'])
+
