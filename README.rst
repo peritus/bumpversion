@@ -345,6 +345,7 @@ Changes
 
 **unreleased**
 
+- Document file specific options ``search =`` and ``replace =`` (introduced in 0.5.0)
 - Fix parsing individual labels from ``serialize =`` config even if there are
   characters after the last label (thanks @mskrajnowski `#56
   <https://github.com/peritus/bumpversion/pull/56>`_).
