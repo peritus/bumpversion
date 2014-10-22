@@ -313,8 +313,12 @@ Changes
 
 **unreleased**
 
+- Fix parsing individual labels from ``serialize =`` config even if there are
+  characters after the last label (thanks @mskrajnowski `#56
+  <https://github.com/peritus/bumpversion/pull/56>`_).
 - Fix: Don't crash in git repositories that have tags that contain hyphens
-    (`#51 <https://github.com/peritus/bumpversion/pull/51>`_) (`#52 <https://github.com/peritus/bumpversion/pull/52>`_).
+  (`#51 <https://github.com/peritus/bumpversion/pull/51>`_) (`#52
+  <https://github.com/peritus/bumpversion/pull/52>`_).
 - Fix: Log actual content of the config file, not what ConfigParser prints
   after reading it.
 - Fix: Support multiline values in ``search =``
