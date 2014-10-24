@@ -607,8 +607,9 @@ def main(original_args=None):
     parser1 = argparse.ArgumentParser(add_help=False)
 
     parser1.add_argument(
-        '--config-file', default=None, metavar='FILE',
-        help='Config file to read most of the variables from', required=False)
+        '--config-file', metavar='FILE',
+        default=argparse.SUPPRESS, required=False,
+        help='Config file to read most of the variables from (default: .bumpversion.cfg)')
 
     parser1.add_argument(
         '--verbose', action='count', default=0,
@@ -662,7 +663,9 @@ def main(original_args=None):
     config = RawConfigParser('')
     config.add_section('bumpversion')
 
-    if known_args.config_file is not None:
+    explicit_config = hasattr(known_args, 'config_file')
+
+    if explicit_config:
         config_file = known_args.config_file
     elif not os.path.exists('.bumpversion.cfg') and \
             os.path.exists('setup.cfg'):
@@ -754,7 +757,7 @@ def main(original_args=None):
 
     else:
         message = "Could not read config file at {}".format(config_file)
-        if known_args.config_file != None:
+        if explicit_config:
             raise argparse.ArgumentTypeError(message)
         else:
             logger.info(message)

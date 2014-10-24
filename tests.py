@@ -78,7 +78,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --config-file FILE    Config file to read most of the variables from
-                        (default: None)
+                        (default: .bumpversion.cfg)
   --verbose             Print verbose logging to stderr (default: 0)
   --list                List machine readable information (default: False)
   --allow-dirty         Don't abort if working directory is dirty (default:
