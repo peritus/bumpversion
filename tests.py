@@ -1666,3 +1666,42 @@ def test_configparser_empty_lines_in_values(tmpdir):
       -------
 
     """) == tmpdir.join("CHANGES.rst").read()
+
+
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git")])
+def test_regression_tag_name_with_hyphens(tmpdir, capsys, vcs):
+    tmpdir.chdir()
+    tmpdir.join("somesource.txt").write("2014.10.22")
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "somesource.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+    check_call([vcs, "tag", "very-unrelated-but-containing-lots-of-hyphens"])
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 2014.10.22
+    """))
+
+    main(['patch', 'somesource.txt'])
+
+def test_regression_characters_after_last_label_serialize_string(tmpdir, capsys):
+    tmpdir.chdir()
+    tmpdir.join("bower.json").write('''
+    {
+      "version": "1.0.0",
+      "dependency1": "1.0.0",
+    }
+    ''')
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 1.0.0
+
+    [bumpversion:file:bower.json]
+    parse = "version": "(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"
+    serialize = "version": "{major}.{minor}.{patch}"
+    """))
+
+    main(['patch', 'bower.json'])
+

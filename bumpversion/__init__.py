@@ -229,10 +229,7 @@ class Git(BaseVCS):
 
         info["commit_sha"] = describe_out.pop().lstrip("g")
         info["distance_to_latest_tag"] = int(describe_out.pop())
-        info["current_version"] = describe_out.pop().lstrip("v")
-
-        # assert type(info["current_version"]) == str
-        assert 0 == len(describe_out)
+        info["current_version"] = "-".join(describe_out).lstrip("v")
 
         return info
 
@@ -536,7 +533,11 @@ class VersionConfig(object):
         self.replace = replace
 
     def _labels_for_format(self, serialize_format):
-        return (label for _, label, _, _ in Formatter().parse(serialize_format))
+        return (
+            label
+            for _, label, _, _ in Formatter().parse(serialize_format)
+            if label
+        )
 
     def order(self):
         # currently, order depends on the first given serialization format

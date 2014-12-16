@@ -265,6 +265,38 @@ File specific configuration
   Also available as ``--serialize``. Multiple values on the command line are
   given like ``--serialize {major}.{minor} --serialize {major}``
 
+``search =``
+  **default:** "``{current_version}``"
+
+  Template string how to search for the string to be replaced in the file.
+  Useful if the remotest possibility exists that the current version number
+  might be multiple times in the file and you mean to only bump one of the
+  occurences. Can be multiple lines, templated using `Python Format String Syntax
+  <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
+
+``replace =``
+  **default:** "``{new_version}``"
+
+  Template to create the string that will replace the current version number in
+  the file.
+
+  Given this ``requirements.txt``::
+
+    Django>=1.5.6,<1.6
+    MyProject==1.5.6
+
+  using this ``.bumpversion.cfg`` will ensure only the line containing
+  ``MyProject`` will be changed::
+
+    [bumpversion]
+    current_version = 1.5.6
+
+    [bumpversion:file:requirements.txt]
+    search = MyProject=={current_version}
+    replace = MyProject=={new_version}
+
+  Can be multiple lines, templated using `Python Format String Syntax
+  <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
 
 Options
 =======
@@ -313,6 +345,13 @@ Changes
 
 **unreleased**
 
+- Document file specific options ``search =`` and ``replace =`` (introduced in 0.5.0)
+- Fix parsing individual labels from ``serialize =`` config even if there are
+  characters after the last label (thanks @mskrajnowski `#56
+  <https://github.com/peritus/bumpversion/pull/56>`_).
+- Fix: Don't crash in git repositories that have tags that contain hyphens
+  (`#51 <https://github.com/peritus/bumpversion/pull/51>`_) (`#52
+  <https://github.com/peritus/bumpversion/pull/52>`_).
 - Fix: Log actual content of the config file, not what ConfigParser prints
   after reading it.
 - Fix: Support multiline values in ``search =``
