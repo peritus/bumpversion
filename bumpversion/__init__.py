@@ -130,7 +130,7 @@ class Svn(BaseVCS):
         pass
 
     @classmethod
-    def tag(cls, name, message):
+    def tag(cls, name, message=""):
         svn_info = subprocess.check_output(["svn", "info"])
         rurl = re.search(r'^relative url: (.*)$', svn_info,
                          re.M|re.I).groups()[0]
@@ -204,7 +204,7 @@ class Git(BaseVCS):
         subprocess.check_output(["git", "add", "--update", path])
 
     @classmethod
-    def tag(cls, name):
+    def tag(cls, name, message=""):
         subprocess.check_output(["git", "tag", name])
 
 
@@ -236,7 +236,7 @@ class Mercurial(BaseVCS):
         pass
 
     @classmethod
-    def tag(cls, name):
+    def tag(cls, name, message=""):
         subprocess.check_output(["hg", "tag", name])
 
 VCS = [Git, Mercurial, Svn]
