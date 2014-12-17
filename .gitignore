@@ -6,3 +6,4 @@ lib/
 .Python
 bumpversion.egg-info/
 *.pyc
+*.whl
