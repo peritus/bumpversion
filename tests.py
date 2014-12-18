@@ -27,7 +27,7 @@ SUBPROCESS_ENV = dict(
                    reason="Windows does not allow Unicode in environment.")
 def test_unicode_env():
     retcode = subprocess.call("exit 42", shell=True,
-                              env={unicode("a"): unicode("b")})
+                              env={"a": "b"})
     assert retcode == 42
 
 call = partial(subprocess.call, env=SUBPROCESS_ENV)
