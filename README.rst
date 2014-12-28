@@ -85,6 +85,9 @@ Example ``.bumpversion.cfg``::
 
   [bumpversion:file:setup.py]
 
+If no ``.bumpversion.cfg`` exists, ``bumpversion`` will also look into
+``setup.cfg`` for configuration.
+
 Global configuration
 --------------------
 
@@ -355,6 +358,8 @@ Changes
 - Fix: Log actual content of the config file, not what ConfigParser prints
   after reading it.
 - Fix: Support multiline values in ``search =``
+- also load configuration from ``setup.cfg`` (thanks @t-8ch `#57
+  <https://github.com/peritus/bumpversion/pull/57>`_).
 
 **v0.5.0**
 
