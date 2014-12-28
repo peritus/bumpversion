@@ -37,6 +37,11 @@ xfail_if_no_hg = pytest.mark.xfail(
   reason="hg is not installed"
 )
 
+@pytest.fixture(params=['.bumpversion.cfg', 'setup.cfg'])
+def configfile(request):
+    return request.param
+
+
 try:
     bumpversion.RawConfigParser(empty_lines_in_values=False)
     using_old_configparser = False
@@ -197,9 +202,9 @@ files: file1""")
     assert "0.9.35" == tmpdir.join("file1").read()
 
 
-def test_default_config_file(tmpdir):
+def test_default_config_files(tmpdir, configfile):
     tmpdir.join("file2").write("0.10.2")
-    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+    tmpdir.join(configfile).write("""[bumpversion]
 current_version: 0.10.2
 new_version: 0.10.3
 files: file2""")
@@ -208,6 +213,23 @@ files: file2""")
     main(['patch'])
 
     assert "0.10.3" == tmpdir.join("file2").read()
+
+
+def test_multiple_config_files(tmpdir):
+    tmpdir.join("file2").write("0.10.2")
+    tmpdir.join("setup.cfg").write("""[bumpversion]
+current_version: 0.10.2
+new_version: 0.10.3
+files: file2""")
+    tmpdir.join(".bumpversion.cfg").write("""[bumpversion]
+current_version: 0.10.2
+new_version: 0.10.4
+files: file2""")
+
+    tmpdir.chdir()
+    main(['patch'])
+
+    assert "0.10.4" == tmpdir.join("file2").read()
 
 
 def test_config_file_is_updated(tmpdir):
