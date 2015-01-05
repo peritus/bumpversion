@@ -338,6 +338,18 @@ are very welcome, as well as bug reports! Also please open an issue if this
 tool does not support every aspect of bumping versions in your development
 workflow, as it is intended to be very versatile.
 
+How to release bumpversion itself
++++++++++++++++++++++++++++++++++
+
+Execute the following commands::
+
+    git checkout master
+    tox
+    bumpversion release
+    python setup.py sdist bdist_wheel upload
+    bumpversion --no-tag patch
+    git push origin master --tags
+
 License
 =======
 
