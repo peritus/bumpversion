@@ -347,6 +347,7 @@ Changes
 =======
 
 **unreleased**
+**v0.5.2-dev**
 **v0.5.1**
 
 - Document file specific options ``search =`` and ``replace =`` (introduced in 0.5.0)

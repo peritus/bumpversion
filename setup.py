@@ -11,7 +11,7 @@ long_description = re.sub(
 
 setup(
     name='bumpversion',
-    version='0.5.1',
+    version='0.5.2-dev',
     url='https://github.com/peritus/bumpversion',
     author='Filip Noetzel',
     author_email='filip+bumpversion@j03.de',
