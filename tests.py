@@ -1775,3 +1775,25 @@ def test_regression_dont_touch_capitalization_of_keys_in_config(tmpdir, capsys):
     DJANGO_SETTINGS = Value
     """).strip() == tmpdir.join("setup.cfg").read().strip()
 
+def test_regression_new_version_cli_in_files(tmpdir, capsys):
+    '''
+    Reported here: https://github.com/peritus/bumpversion/issues/60
+    '''
+    tmpdir.chdir()
+    tmpdir.join("myp___init__.py").write("__version__ = '0.7.2'")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        current_version = 0.7.2
+        files = myp___init__.py
+        message = v{new_version}
+        tag_name = {new_version}
+        tag = true
+        commit = true
+        """).strip())
+
+    main("patch --allow-dirty --verbose --new-version 0.9.3".split(" "))
+
+    assert "__version__ = '0.9.3'" == tmpdir.join("myp___init__.py").read()
+    assert "current_version = 0.9.3" in tmpdir.join(".bumpversion.cfg").read()
