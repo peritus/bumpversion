@@ -20,7 +20,7 @@ import bumpversion
 from bumpversion import main, DESCRIPTION, WorkingDirectoryIsDirtyException
 
 SUBPROCESS_ENV = dict(
-    list(environ.items()) + [('HGENCODING', 'utf-8')]
+    list(environ.items()) + [('HGENCODING'.encode('ascii'), 'utf-8'.encode('ascii'))]
 )
 
 call = partial(subprocess.call, env=SUBPROCESS_ENV)
