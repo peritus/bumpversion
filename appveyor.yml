@@ -42,6 +42,15 @@ install:
   - "%PYTHON%/Scripts/pip.exe install mercurial"
   - "%PYTHON%/Scripts/pip.exe install -e ."
 
+  - 'git config --global user.email "bumpversion-test-git@appveyor.ci"'
+  - 'git config --global user.name "Testing Git on AppVeyor CI"'
+  - 'git --version'
+  - 'git config --list'
+
+  - ps: $config = "[ui]\nusername = Testing Mercurial on AppVeyor CI <bumpversion-test-hg@appveyor.ci>"
+  - ps: $config | Out-File %HOME%\Mercurial.ini
+  - 'hg --version'
+
 test_script:
   - "%PYTHON%/Scripts/pip.exe --version"
   - "%PYTHON%/Scripts/virtualenv.exe --version"
