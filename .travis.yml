@@ -1,12 +1,13 @@
 language: python
 
 env:
-  - TOX_ENV=py27
-  - TOX_ENV=py27-configparser
-  - TOX_ENV=py32
-  - TOX_ENV=py33
-  - TOX_ENV=py34
-  - TOX_ENV=pypy
+  - TOXENV=py27
+  - TOXENV=py27-configparser
+  - TOXENV=py32
+  - TOXENV=py33
+  - TOXENV=py34
+  - TOXENV=pypy
+
 install:
   - git config --global user.email "bumpversion-test-git@travis.ci"
   - git config --global user.name "Testing Git on Travis CI"
@@ -17,5 +18,5 @@ install:
   - pip install --upgrade pytest tox
 
 script:
-  - tox -e $TOX_ENV
+  - tox
 
