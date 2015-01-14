@@ -39,6 +39,7 @@ install:
   - "%PYTHON%/python.exe C:/get-pip.py"
   - "%PYTHON%/Scripts/pip.exe install virtualenv"
   - "%PYTHON%/Scripts/pip.exe install tox"
+  - "%PYTHON%/Scripts/pip.exe install mercurial"
   - "%PYTHON%/Scripts/pip.exe install -e ."
 
 test_script:
