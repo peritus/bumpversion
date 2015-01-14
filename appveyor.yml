@@ -7,14 +7,25 @@ environment:
   matrix:
     - PYTHON: "C:/Python27"
       TOXENV: "2.7"
+
     - PYTHON: "C:/Python27-x64"
       TOXENV: "2.7"
+
+    - PYTHON: "C:/Python27"
+      TOXENV: "2.7-configparser"
+
+    - PYTHON: "C:/Python27-x64"
+      TOXENV: "2.7-configparser"
+
     - PYTHON: "C:/Python33"
       TOXENV: "3.3"
+
     - PYTHON: "C:/Python33-x64"
       TOXENV: "3.3"
+
     - PYTHON: "C:/Python34"
       TOXENV: "3.4"
+
     - PYTHON: "C:/Python34-x64"
       TOXENV: "3.4"
 
