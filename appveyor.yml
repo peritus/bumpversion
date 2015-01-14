@@ -1,7 +1,17 @@
+
+version: {build}
+
+build: off
+
 environment:
   matrix:
     - PYTHON: "C:/Python27"
+    - PYTHON: "C:/Python27-x64"
+    - PYTHON: "C:/Python33"
+    - PYTHON: "C:/Python33-x64"
     - PYTHON: "C:/Python34"
+    - PYTHON: "C:/Python34-x64"
+
 init:
   - "ECHO %PYTHON%"
   - ps: "ls C:/Python*"
@@ -11,5 +21,6 @@ install:
   - "%PYTHON%/Scripts/pip.exe install -e ."
 test_script:
   - "%PYTHON%/Scripts/pip.exe --version"
-  - "%PYTHON%/Scripts/http.exe --debug"
-  - "%PYTHON%/python.exe setup.py test"
+  - "%PYTHON%/Scripts/virtualenv.exe --version"
+  - "%PYTHON%/Scripts/tox.exe --version"
+  - "%PYTHON%/Scripts/tox.exe"
