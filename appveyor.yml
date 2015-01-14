@@ -1,24 +1,33 @@
 
-version: {build}
+version: '{build}'
 
 build: off
 
 environment:
   matrix:
     - PYTHON: "C:/Python27"
+      TOXENV: "2.7"
     - PYTHON: "C:/Python27-x64"
+      TOXENV: "2.7"
     - PYTHON: "C:/Python33"
+      TOXENV: "3.3"
     - PYTHON: "C:/Python33-x64"
+      TOXENV: "3.3"
     - PYTHON: "C:/Python34"
+      TOXENV: "3.4"
     - PYTHON: "C:/Python34-x64"
+      TOXENV: "3.4"
 
 init:
+  - "ECHO %TOXENV%"
   - "ECHO %PYTHON%"
   - ps: "ls C:/Python*"
+
 install:
   - ps: (new-object net.webclient).DownloadFile('https://raw.github.com/pypa/pip/master/contrib/get-pip.py', 'C:/get-pip.py')
   - "%PYTHON%/python.exe C:/get-pip.py"
   - "%PYTHON%/Scripts/pip.exe install -e ."
+
 test_script:
   - "%PYTHON%/Scripts/pip.exe --version"
   - "%PYTHON%/Scripts/virtualenv.exe --version"
