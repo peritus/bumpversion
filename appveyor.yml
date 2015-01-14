@@ -6,28 +6,28 @@ build: off
 environment:
   matrix:
     - PYTHON: "C:/Python27"
-      TOXENV: "2.7"
+      TOXENV: "py27"
 
     - PYTHON: "C:/Python27-x64"
-      TOXENV: "2.7"
+      TOXENV: "py27"
 
     - PYTHON: "C:/Python27"
-      TOXENV: "2.7-configparser"
+      TOXENV: "py27-configparser"
 
     - PYTHON: "C:/Python27-x64"
-      TOXENV: "2.7-configparser"
+      TOXENV: "py27-configparser"
 
     - PYTHON: "C:/Python33"
-      TOXENV: "3.3"
+      TOXENV: "py33"
 
     - PYTHON: "C:/Python33-x64"
-      TOXENV: "3.3"
+      TOXENV: "py33"
 
     - PYTHON: "C:/Python34"
-      TOXENV: "3.4"
+      TOXENV: "py34"
 
     - PYTHON: "C:/Python34-x64"
-      TOXENV: "3.4"
+      TOXENV: "py34"
 
 init:
   - "ECHO %TOXENV%"
