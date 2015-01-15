@@ -270,8 +270,8 @@ class ConfiguredFile(object):
             ))
 
         if not dry_run:
-            with io.open(self.path, 'wt', encoding='utf-8') as f:
-                f.write(file_content_after)
+            with io.open(self.path, 'wb') as f:
+                f.write(file_content_after.encode('utf-8'))
 
     def __str__(self):
         return self.path
