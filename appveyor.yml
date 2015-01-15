@@ -49,6 +49,7 @@ install:
 
   - ps: Add-Content $ENV:UserProfile\Mercurial.ini "[ui]`r`nusername = Testing Mercurial on AppVeyor CI <bumpversion-test-hg@appveyor.ci>"
   - ps: Write-Host $ENV:UserProfile\Mercurial.ini
+  - ps: Get-Content $ENV:UserProfile\Mercurial.ini
   - 'hg --version'
 
 test_script:
