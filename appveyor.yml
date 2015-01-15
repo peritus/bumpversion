@@ -47,7 +47,7 @@ install:
   - 'git --version'
   - 'git config --list'
 
-  - ps: $config = "[ui]`nusername = Testing Mercurial on AppVeyor CI <bumpversion-test-hg@appveyor.ci>"
+  - ps: $config = "[ui]`r`nusername = Testing Mercurial on AppVeyor CI <bumpversion-test-hg@appveyor.ci>"
   - ps: Write-Host $config
   - ps: Write-Host $HOME\Mercurial.ini
   - ps: $config | Out-File $HOME\Mercurial.ini
