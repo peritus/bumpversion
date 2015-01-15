@@ -16,6 +16,9 @@ commits and tags:
 .. image:: https://travis-ci.org/peritus/bumpversion.png?branch=master
   :target: https://travis-ci.org/peritus/bumpversion
 
+.. image:: https://ci.appveyor.com/api/projects/status/bxq8185bpq9u3sjd/branch/master?svg=true
+  :target: https://ci.appveyor.com/project/peritus/bumpversion
+
 Screencast
 ==========
 
