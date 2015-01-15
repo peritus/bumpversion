@@ -122,7 +122,10 @@ def test_usage_string(tmpdir, capsys):
 def test_usage_string_fork(tmpdir, capsys):
     tmpdir.chdir()
 
-    out = check_output('bumpversion --help; exit 0', shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+    try:
+        out = check_output('bumpversion --help', shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+    except subprocess.CalledProcessError as e:
+        out = e.output
 
     if not 'usage: bumpversion [-h]' in out:
         print(out)
