@@ -35,7 +35,7 @@ check_call = partial(subprocess.check_call, env=SUBPROCESS_ENV)
 check_output = partial(subprocess.check_output,  env=SUBPROCESS_ENV)
 
 xfail_if_no_git = pytest.mark.xfail(
-  call(["git", "--help"], shell=True) != 1,
+  call(["git", "help"], shell=True) != 0,
   reason="git is not installed"
 )
 
