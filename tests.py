@@ -63,12 +63,24 @@ def _mock_calls_to_string(called_mock):
 
 
 EXPECTED_OPTIONS = """
-[-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]
-[--parse REGEX] [--serialize FORMAT] [--search SEARCH]
-[--replace REPLACE] [--current-version VERSION] [--dry-run]
---new-version VERSION [--commit | --no-commit]
-[--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
-part [file [file ...]]
+[-h]
+[--config-file FILE]
+[--verbose]
+[--list]
+[--allow-dirty]
+[--parse REGEX]
+[--serialize FORMAT]
+[--search SEARCH]
+[--replace REPLACE]
+[--current-version VERSION]
+[--dry-run]
+--new-version VERSION
+[--commit | --no-commit]
+[--tag | --no-tag]
+[--tag-name TAG_NAME]
+[--message COMMIT_MSG]
+part
+[file [file ...]]
 """.strip().splitlines()
 
 EXPECTED_USAGE = ("""
@@ -123,7 +135,7 @@ def test_usage_string(tmpdir, capsys):
     assert err == ""
 
     for option_line in EXPECTED_OPTIONS:
-        assert option_line in out, "Usage string is missing %r".format(option_line)
+        assert option_line in out, "Usage string is missing {0}".format(option_line)
 
     assert EXPECTED_USAGE in out
 
