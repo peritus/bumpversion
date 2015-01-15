@@ -68,13 +68,17 @@ def _mock_calls_to_string(called_mock):
     ) for name, args, kwargs in called_mock.mock_calls]
 
 
+
+EXPECTED_OPTIONS = """
+[-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]
+[--parse REGEX] [--serialize FORMAT] [--search SEARCH]
+[--replace REPLACE] [--current-version VERSION] [--dry-run]
+--new-version VERSION [--commit | --no-commit]
+[--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
+part [file [file ...]]
+""".strip().splitlines()
+
 EXPECTED_USAGE = ("""
-usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]
-               [--parse REGEX] [--serialize FORMAT] [--search SEARCH]
-               [--replace REPLACE] [--current-version VERSION] [--dry-run]
-               --new-version VERSION [--commit | --no-commit]
-               [--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
-               part [file [file ...]]
 
 %s
 
@@ -124,7 +128,11 @@ def test_usage_string(tmpdir, capsys):
 
     out, err = capsys.readouterr()
     assert err == ""
-    assert out == EXPECTED_USAGE, "Usage string changed to \n\n\n{}\n\n\n".format(out)
+
+    for option_line in EXPECTED_OPTIONS:
+        assert option_line in out, "Usage string is missing %r".format(option_line)
+
+    assert EXPECTED_USAGE in out
 
 def test_usage_string_fork(tmpdir, capsys):
     tmpdir.chdir()
@@ -154,10 +162,10 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
     out, err = capsys.readouterr()
 
     if vcs == "git":
-        assert "usage: py.test [-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]" in out
+        assert "[-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
     else:
-        assert out == EXPECTED_USAGE
+        assert EXPECTED_USAGE in out
 
 
 def test_defaults_in_usage_with_config(tmpdir, capsys):
