@@ -31,7 +31,7 @@ import codecs
 if sys.version_info[0] == 2:
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
-__VERSION__ = '0.4.1'
+__VERSION__ = '0.5.2-dev'
 
 DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
     __VERSION__,
@@ -70,7 +70,7 @@ class BaseVCS(object):
         f.write(message.encode('utf-8'))
         f.close()
         subprocess.check_output(cls._COMMIT_COMMAND + [f.name], env=dict(
-            list(os.environ.items()) + [('HGENCODING', 'utf-8')]
+            list(os.environ.items()) + [(b'HGENCODING', b'utf-8')]
         ))
         os.unlink(f.name)
 
@@ -104,8 +104,9 @@ class Git(BaseVCS):
         ]
 
         if lines:
-            assert False, "Git working directory not clean:\n{}".format(
-                b"\n".join(lines))
+            raise WorkingDirectoryIsDirtyException(
+                "Git working directory is not clean:\n{}".format(
+                    b"\n".join(lines)))
 
     @classmethod
     def latest_tag_info(cls):
@@ -136,10 +137,7 @@ class Git(BaseVCS):
 
         info["commit_sha"] = describe_out.pop().lstrip("g")
         info["distance_to_latest_tag"] = int(describe_out.pop())
-        info["current_version"] = describe_out.pop().lstrip("v")
-
-        # assert type(info["current_version"]) == str
-        assert 0 == len(describe_out)
+        info["current_version"] = "-".join(describe_out).lstrip("v")
 
         return info
 
@@ -171,8 +169,9 @@ class Mercurial(BaseVCS):
         ]
 
         if lines:
-            assert False, "Mercurial working directory not clean:\n{}".format(
-                b"\n".join(lines))
+            raise WorkingDirectoryIsDirtyException(
+                "Mercurial working directory is not clean:\n{}".format(
+                    b"\n".join(lines)))
 
     @classmethod
     def add_path(cls, path):
@@ -213,10 +212,20 @@ class ConfiguredFile(object):
 
     def contains(self, search):
         with io.open(self.path, 'rb') as f:
+            search_lines = search.splitlines()
+            lookbehind = []
+
             for lineno, line in enumerate(f.readlines()):
-                if search in line.decode('utf-8'):
+                lookbehind.append(line.decode('utf-8').rstrip("\n"))
+
+                if len(lookbehind) > len(search_lines):
+                    lookbehind = lookbehind[1:]
+
+                if (search_lines[0] in lookbehind[0] and
+                   search_lines[-1] in lookbehind[-1] and
+                   search_lines[1:-1] == lookbehind[1:-1]):
                     logger.info("Found '{}' in {} at line {}: {}".format(
-                        search, self.path, lineno, line.decode('utf-8').rstrip()))
+                        search, self.path, lineno - (len(lookbehind) - 1), line.decode('utf-8').rstrip()))
                     return True
         return False
 
@@ -362,6 +371,10 @@ class MissingValueForSerializationException(Exception):
     def __init__(self, message):
         self.message = message
 
+class WorkingDirectoryIsDirtyException(Exception):
+    def __init__(self, message):
+        self.message = message
+
 def keyvaluestring(d):
     return ", ".join("{}={}".format(k, v) for k, v in sorted(d.items()))
 
@@ -427,7 +440,11 @@ class VersionConfig(object):
         self.replace = replace
 
     def _labels_for_format(self, serialize_format):
-        return (label for _, label, _, _ in Formatter().parse(serialize_format))
+        return (
+            label
+            for _, label, _, _ in Formatter().parse(serialize_format)
+            if label
+        )
 
     def order(self):
         # currently, order depends on the first given serialization format
@@ -591,8 +608,9 @@ def main(original_args=None):
     parser1 = argparse.ArgumentParser(add_help=False)
 
     parser1.add_argument(
-        '--config-file', default='.bumpversion.cfg', metavar='FILE',
-        help='Config file to read most of the variables from', required=False)
+        '--config-file', metavar='FILE',
+        default=argparse.SUPPRESS, required=False,
+        help='Config file to read most of the variables from (default: .bumpversion.cfg)')
 
     parser1.add_argument(
         '--verbose', action='count', default=0,
@@ -601,6 +619,10 @@ def main(original_args=None):
     parser1.add_argument(
         '--list', action='store_true', default=False,
         help='List machine readable information', required=False)
+
+    parser1.add_argument(
+        '--allow-dirty', action='store_true', default=False,
+        help="Don't abort if working directory is dirty", required=False)
 
     known_args, remaining_argv = parser1.parse_known_args(args)
 
@@ -642,7 +664,17 @@ def main(original_args=None):
     config = RawConfigParser('')
     config.add_section('bumpversion')
 
-    config_file_exists = os.path.exists(known_args.config_file)
+    explicit_config = hasattr(known_args, 'config_file')
+
+    if explicit_config:
+        config_file = known_args.config_file
+    elif not os.path.exists('.bumpversion.cfg') and \
+            os.path.exists('setup.cfg'):
+        config_file = 'setup.cfg'
+    else:
+        config_file = '.bumpversion.cfg'
+
+    config_file_exists = os.path.exists(config_file)
 
     part_configs = {}
 
@@ -650,13 +682,13 @@ def main(original_args=None):
 
     if config_file_exists:
 
-        config.readfp(io.open(known_args.config_file, 'rt', encoding='utf-8'))
+        logger.info("Reading config file {}:".format(config_file))
+        logger.info(io.open(config_file, 'rt', encoding='utf-8').read())
+
+        config.readfp(io.open(config_file, 'rt', encoding='utf-8'))
 
         log_config = StringIO()
         config.write(log_config)
-
-        logger.info("Reading config file {}:".format(known_args.config_file))
-        logger.info(log_config.getvalue())
 
         if 'files' in dict(config.items("bumpversion")):
             warnings.warn(
@@ -725,8 +757,8 @@ def main(original_args=None):
                 files.append(ConfiguredFile(filename, VersionConfig(**section_config)))
 
     else:
-        message = "Could not read config file at {}".format(known_args.config_file)
-        if known_args.config_file != parser1.get_default('config_file'):
+        message = "Could not read config file at {}".format(config_file)
+        if explicit_config:
             raise argparse.ArgumentTypeError(message)
         else:
             logger.info(message)
@@ -856,7 +888,13 @@ def main(original_args=None):
 
     for vcs in VCS:
         if vcs.is_usable():
-            vcs.assert_nondirty()
+            try:
+                vcs.assert_nondirty()
+            except WorkingDirectoryIsDirtyException as e:
+                if not defaults['allow_dirty']:
+                    logger.warn(
+                        "{}\n\nUse --allow-dirty to override this if you know what you're doing.".format(e.message))
+                    raise
             break
         else:
             vcs = None
@@ -890,14 +928,14 @@ def main(original_args=None):
 
         logger.info("{} to config file {}:".format(
             "Would write" if not write_to_config_file else "Writing",
-            known_args.config_file,
+            config_file,
         ))
 
         config.write(new_config)
         logger.info(new_config.getvalue())
 
         if write_to_config_file:
-            with io.open(known_args.config_file, 'wb') as f:
+            with io.open(config_file, 'wb') as f:
                 f.write(new_config.getvalue().encode('utf-8'))
 
     except UnicodeEncodeError:
@@ -907,7 +945,7 @@ def main(original_args=None):
         )
 
     if config_file_exists:
-        commit_files.append(known_args.config_file)
+        commit_files.append(config_file)
 
     if not vcs:
         return

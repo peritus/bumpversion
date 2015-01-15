@@ -1,0 +1,47 @@
+
+version: '{build}'
+
+build: off
+
+environment:
+  matrix:
+    - PYTHON: "C:/Python27"
+      TOXENV: "py27"
+
+    - PYTHON: "C:/Python27"
+      TOXENV: "py27-configparser"
+
+    - PYTHON: "C:/Python33"
+      TOXENV: "py33"
+
+    - PYTHON: "C:/Python34"
+      TOXENV: "py34"
+
+init:
+  - "ECHO %TOXENV%"
+  - "ECHO %PYTHON%"
+  - ps: "ls C:/Python*"
+
+install:
+  - ps: (new-object net.webclient).DownloadFile('https://raw.github.com/pypa/pip/master/contrib/get-pip.py', 'C:/get-pip.py')
+  - "%PYTHON%/python.exe C:/get-pip.py"
+  - "%PYTHON%/Scripts/pip.exe install virtualenv"
+  - "%PYTHON%/Scripts/pip.exe install tox"
+  - "%PYTHON%/Scripts/pip.exe install mercurial"
+  - "%PYTHON%/Scripts/pip.exe install -e ."
+
+  - 'git config --global user.email "bumpversion-test-git@appveyor.ci"'
+  - 'git config --global user.name "Testing Git on AppVeyor CI"'
+  - 'git --version'
+  - 'git config --list'
+
+  - ps: Add-Content $ENV:UserProfile\Mercurial.ini "[ui]`r`nusername = Testing Mercurial on AppVeyor CI <bumpversion-test-hg@appveyor.ci>"
+  - ps: Write-Host $ENV:UserProfile\Mercurial.ini
+  - ps: Get-Content $ENV:UserProfile\Mercurial.ini
+  - 'hg --version'
+
+test_script:
+  - "%PYTHON%/Scripts/pip.exe --version"
+  - "%PYTHON%/Scripts/virtualenv.exe --version"
+  - "%PYTHON%/Scripts/tox.exe --version"
+  - "%PYTHON%/Scripts/tox.exe -- -v"
