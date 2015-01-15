@@ -123,7 +123,7 @@ def test_usage_string(tmpdir, capsys):
     assert err == ""
 
     for option_line in EXPECTED_OPTIONS:
-        assert option_line in out, "Usage string is missing %r".format(option_line)
+        assert option_line in out, "Usage string is missing {}".format(option_line)
 
     assert EXPECTED_USAGE in out
 
