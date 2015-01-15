@@ -51,6 +51,7 @@ install:
   - ps: Write-Host $ENV:UserProfile\Mercurial.ini
   - ps: Get-Content $ENV:UserProfile\Mercurial.ini
   - 'hg --version'
+  - "python -c \"import subprocess; print subprocess.call(['hg', '--help'])\""
 
 test_script:
   - "%PYTHON%/Scripts/pip.exe --version"
