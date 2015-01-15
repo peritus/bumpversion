@@ -63,12 +63,24 @@ def _mock_calls_to_string(called_mock):
 
 
 EXPECTED_OPTIONS = """
-[-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]
-[--parse REGEX] [--serialize FORMAT] [--search SEARCH]
-[--replace REPLACE] [--current-version VERSION] [--dry-run]
---new-version VERSION [--commit | --no-commit]
-[--tag | --no-tag] [--tag-name TAG_NAME] [--message COMMIT_MSG]
-part [file [file ...]]
+[-h]
+[--config-file FILE]
+[--verbose]
+[--list]
+[--allow-dirty]
+[--parse REGEX]
+[--serialize FORMAT]
+[--search SEARCH]
+[--replace REPLACE]
+[--current-version VERSION]
+[--dry-run]
+--new-version VERSION
+[--commit | --no-commit]
+[--tag | --no-tag]
+[--tag-name TAG_NAME]
+[--message COMMIT_MSG]
+part
+[file [file ...]]
 """.strip().splitlines()
 
 EXPECTED_USAGE = ("""
