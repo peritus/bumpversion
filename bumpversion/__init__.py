@@ -763,7 +763,7 @@ def main(original_args=None):
         else:
             logger.info(message)
 
-    parser2 = argparse.ArgumentParser(add_help=False, parents=[parser1])
+    parser2 = argparse.ArgumentParser(prog='bumpversion', add_help=False, parents=[parser1])
     parser2.set_defaults(**defaults)
 
     parser2.add_argument('--current-version', metavar='VERSION',
@@ -820,6 +820,7 @@ def main(original_args=None):
             logger.info("Opportunistic finding of new_version failed")
 
     parser3 = argparse.ArgumentParser(
+        prog='bumpversion',
         description=DESCRIPTION,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         conflict_handler='resolve',
