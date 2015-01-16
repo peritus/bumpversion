@@ -166,8 +166,10 @@ def test_regression_help_in_workdir(tmpdir, capsys, vcs):
 
     out, err = capsys.readouterr()
 
+    for option_line in EXPECTED_OPTIONS:
+        assert option_line in out, "Usage string is missing {}".format(option_line)
+
     if vcs == "git":
-        assert "[-h] [--config-file FILE] [--verbose] [--list] [--allow-dirty]" in out
         assert "Version that needs to be updated (default: 1.7.2013)" in out
     else:
         assert EXPECTED_USAGE in out
