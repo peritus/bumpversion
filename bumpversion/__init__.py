@@ -237,11 +237,11 @@ class ConfiguredFile(object):
             search_lines = search.splitlines()
             lookbehind = []
 
-            text = f.read()
+            text = f.read().decode('utf-8')
             eol = line_ending(text)
 
             for lineno, line in enumerate(text.splitlines(True)):
-                lookbehind.append(line.rstrip(eol).decode('utf-8'))
+                lookbehind.append(line.rstrip(eol))
 
                 if len(lookbehind) > len(search_lines):
                     lookbehind = lookbehind[1:]
@@ -250,7 +250,7 @@ class ConfiguredFile(object):
                    search_lines[-1] in lookbehind[-1] and
                    search_lines[1:-1] == lookbehind[1:-1]):
                     logger.info("Found '{}' in {} at line {}: {}".format(
-                        search, self.path, lineno - (len(lookbehind) - 1), line.decode('utf-8').rstrip()))
+                        search, self.path, lineno - (len(lookbehind) - 1), line.rstrip()))
                     return True
         return False
 
