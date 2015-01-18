@@ -187,6 +187,28 @@ VCS = [Git, Mercurial]
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.items()))
 
+
+def line_ending(txt):
+    """
+    Return the character(s) representing the end-of-line in `txt`.
+
+    Returns `os.linesep` if the eol-charachter(s) cannot be determined.
+    """
+    lines = txt.splitlines(True)
+    if not lines:
+        return os.linesep  # use system default
+    first = lines[0]
+    eols = [b'\r\n', b'\n', b'\r']
+    # if isinstance(first, unicode):
+    if type(eols[0]) != type(first):
+        eols = [s.decode('ascii') for s in eols]
+
+    for eol in eols:
+        if first.endswith(eol):
+            return eol
+    return os.linesep
+
+
 class ConfiguredFile(object):
 
     def __init__(self, path, versionconfig):
@@ -215,8 +237,11 @@ class ConfiguredFile(object):
             search_lines = search.splitlines()
             lookbehind = []
 
-            for lineno, line in enumerate(f.readlines()):
-                lookbehind.append(line.decode('utf-8').rstrip("\n"))
+            text = f.read()
+            eol = line_ending(text)
+
+            for lineno, line in enumerate(text.splitlines(True)):
+                lookbehind.append(line.decode('utf-8').rstrip(eol))
 
                 if len(lookbehind) > len(search_lines):
                     lookbehind = lookbehind[1:]
@@ -233,19 +258,6 @@ class ConfiguredFile(object):
 
         with io.open(self.path, 'rb') as f:
             file_content_before = f.read().decode('utf-8')
-
-        def line_ending(txt):
-            lines = txt.splitlines(True)
-            if not lines:
-                return os.linesep  # use system default
-            first = lines[0]
-            if first.endswith('\r\n'):
-                return '\r\n'
-            if first.endswith('\n'):
-                return '\n'
-            if first.endswith('\r'):
-                return '\r'
-            return os.linesep
 
         eol = line_ending(file_content_before)
 
