@@ -241,7 +241,7 @@ class ConfiguredFile(object):
             eol = line_ending(text)
 
             for lineno, line in enumerate(text.splitlines(True)):
-                lookbehind.append(line.decode('utf-8').rstrip(eol))
+                lookbehind.append(line.rstrip(eol).decode('utf-8'))
 
                 if len(lookbehind) > len(search_lines):
                     lookbehind = lookbehind[1:]
