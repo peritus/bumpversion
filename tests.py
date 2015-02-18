@@ -1754,3 +1754,24 @@ def test_regression_characters_after_last_label_serialize_string(tmpdir, capsys)
 
     main(['patch', 'bower.json'])
 
+def test_regression_dont_touch_capitalization_of_keys_in_config(tmpdir, capsys):
+
+    tmpdir.chdir()
+    tmpdir.join("setup.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 0.1.0
+
+    [other]
+    DJANGO_SETTINGS = Value
+    """))
+
+    main(['patch'])
+
+    assert dedent("""
+    [bumpversion]
+    current_version = 0.1.1
+
+    [other]
+    DJANGO_SETTINGS = Value
+    """).strip() == tmpdir.join("setup.cfg").read().strip()
+

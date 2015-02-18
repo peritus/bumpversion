@@ -662,6 +662,10 @@ def main(original_args=None):
         defaults['current_version'] = vcs_info['current_version']
 
     config = RawConfigParser('')
+
+    # don't transform keys to lowercase (which would be the default)
+    config.optionxform = lambda option: option
+
     config.add_section('bumpversion')
 
     explicit_config = hasattr(known_args, 'config_file')
