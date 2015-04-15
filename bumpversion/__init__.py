@@ -31,7 +31,7 @@ import codecs
 if sys.version_info[0] == 2:
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
-__VERSION__ = '0.5.2'
+__VERSION__ = '0.5.3-dev'
 
 DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
     __VERSION__,
