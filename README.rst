@@ -362,7 +362,15 @@ Changes
 =======
 
 **unreleased**
-**v0.5.2-dev**
+
+**v0.5.2**
+
+- Fix bug where ``--new-version`` value was not used when config was present
+  (thanks @cscetbon @ecordell (`#60 <https://github.com/peritus/bumpversion/pull/60>`_)
+- Preserve case of keys config file
+  (thanks theskumar `#75 <https://github.com/peritus/bumpversion/pull/75>`_)
+- Windows CRLF improvements (thanks @thebjorn)
+
 **v0.5.1**
 
 - Document file specific options ``search =`` and ``replace =`` (introduced in 0.5.0)
