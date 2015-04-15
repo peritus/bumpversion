@@ -363,6 +363,7 @@ Changes
 =======
 
 **unreleased**
+**v0.5.3**
 
 **v0.5.3-dev**
 
