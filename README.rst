@@ -347,6 +347,7 @@ How to release bumpversion itself
 Execute the following commands::
 
     git checkout master
+    git pull
     tox
     bumpversion release
     python setup.py sdist bdist_wheel upload
