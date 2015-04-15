@@ -363,11 +363,8 @@ Changes
 =======
 
 **unreleased**
+
 **v0.5.3**
-
-**v0.5.3-dev**
-
-**v0.5.2**
 
 - Fix bug where ``--new-version`` value was not used when config was present
   (thanks @cscetbon @ecordell (`#60 <https://github.com/peritus/bumpversion/pull/60>`_)
