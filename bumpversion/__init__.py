@@ -880,8 +880,8 @@ def main(original_args=None):
 
     if args.dry_run:
         logger.info("Dry run active, won't touch any files.")
-
-    if not new_version:
+    
+    if args.new_version:
         new_version = vc.parse(args.new_version)
 
     logger.info("New version will be '{}'".format(args.new_version))
