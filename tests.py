@@ -23,6 +23,13 @@ SUBPROCESS_ENV = dict(
     list(environ.items()) + [(b'HGENCODING', b'utf-8')]
 )
 
+@pytest.mark.xfail(sys.platform == 'win32',
+                   reason="Windows does not allow Unicode in environment.")
+def test_unicode_env():
+    retcode = subprocess.call("exit 42", shell=True,
+                              env={"a": "b"})
+    assert retcode == 42
+
 call = partial(subprocess.call, env=SUBPROCESS_ENV)
 check_call = partial(subprocess.check_call, env=SUBPROCESS_ENV)
 check_output = partial(subprocess.check_output,  env=SUBPROCESS_ENV)
