@@ -330,6 +330,16 @@ Additionally, the following options are available:
     current_version=0.0.18
     new_version=0.0.19
 
+``--list-fields``
+  List values of the given fields (comma separated) to stdout. The fields are
+  those listed by --list.
+
+  Example ::
+
+    $ bumpversion --list-fields=current_version,new_version minor
+    0.0.18
+    0.0.19
+
 ``-h, --help``
   Print help and exit
 

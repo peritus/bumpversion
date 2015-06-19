@@ -97,6 +97,9 @@ optional arguments:
                         (default: .bumpversion.cfg)
   --verbose             Print verbose logging to stderr (default: 0)
   --list                List machine readable information (default: False)
+  --list-fields LIST_FIELDS
+                        Print the value of the comma-separated list of fields
+                        one value per line.
   --allow-dirty         Don't abort if working directory is dirty (default:
                         False)
   --parse REGEX         Regex parsing the version string (default:
@@ -1185,6 +1188,38 @@ def test_listing(tmpdir, vcs):
         info|commit=False|
         info|tag=False|
         info|new_version=0.5.6|
+        """).strip()
+
+    if vcs == "hg":
+        EXPECTED_LOG = EXPECTED_LOG.replace("Git", "Mercurial")
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[3:])
+
+    assert actual_log == EXPECTED_LOG
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_listing_fields(tmpdir, vcs):
+    tmpdir.join("please_list_me.txt").write("0.5.5")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = please_list_me.txt
+        current_version = 0.5.5
+        commit = False
+        tag = False
+        """).strip())
+
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "please_list_me.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    with mock.patch("bumpversion.logger_list_fields") as logger:
+        main(['--list-fields=current_version,new_version', 'patch'])
+
+    EXPECTED_LOG = dedent("""
+        info|0.5.5|
+        info|0.5.6|
         """).strip()
 
     if vcs == "hg":
