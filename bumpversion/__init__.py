@@ -41,6 +41,7 @@ DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
 import logging
 logger = logging.getLogger("bumpversion.logger")
 logger_list = logging.getLogger("bumpversion.list")
+logger_list_fields = logging.getLogger("bumpversion.list_fields")
 
 from argparse import _AppendAction
 class DiscardDefaultIfSpecifiedAppendAction(_AppendAction):
@@ -621,6 +622,11 @@ def main(original_args=None):
         help='List machine readable information', required=False)
 
     parser1.add_argument(
+        '--list-fields', metavar='LIST_FIELDS',
+        default=argparse.SUPPRESS, required=False,
+        help='Print the value of the comma-separated list of fields one value per line.')
+
+    parser1.add_argument(
         '--allow-dirty', action='store_true', default=False,
         help="Don't abort if working directory is dirty", required=False)
 
@@ -638,8 +644,16 @@ def main(original_args=None):
        ch2.setFormatter(logformatter)
        logger_list.addHandler(ch2)
 
+    if len(logger_list_fields.handlers) == 0:
+       ch3 = logging.StreamHandler(sys.stdout)
+       ch3.setFormatter(logformatter)
+       logger_list_fields.addHandler(ch3)
+
     if known_args.list:
           logger_list.setLevel(1)
+
+    if 'list_fields' in known_args:
+          logger_list_fields.setLevel(1)
 
     log_level = {
         0: logging.WARNING,
@@ -921,6 +935,12 @@ def main(original_args=None):
 
     for key, value in config.items('bumpversion'):
         logger_list.info("{}={}".format(key, value))
+
+    if 'list_fields' in known_args:
+        d = dict(config.items('bumpversion'))
+        for field in known_args.list_fields.split(','):
+            if field in d.keys():
+                logger_list_fields.info("{}".format(d[field]))
 
     config.remove_option('bumpversion', 'new_version')
 
