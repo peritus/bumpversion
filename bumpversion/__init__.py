@@ -572,6 +572,7 @@ OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--search',
     '--replace',
     '--tag-name',
+    '-m'
 ]
 
 
@@ -587,7 +588,7 @@ def split_args_in_optional_and_positional(args):
         if i > 0:
             previous = args[i-1]
 
-        if ((not arg.startswith('--'))  and
+        if ((not arg.startswith('-'))  and
             (previous not in OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES)):
             positions.append(i)
 
@@ -880,7 +881,7 @@ def main(original_args=None):
 
     if args.dry_run:
         logger.info("Dry run active, won't touch any files.")
-    
+
     if args.new_version:
         new_version = vc.parse(args.new_version)
 
@@ -1002,4 +1003,3 @@ def main(original_args=None):
 
     if do_tag:
         vcs.tag(tag_name)
-
