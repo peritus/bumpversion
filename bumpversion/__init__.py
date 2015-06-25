@@ -490,6 +490,7 @@ OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--search',
     '--replace',
     '--tag-name',
+    '-m'
 ]
 
 
@@ -505,7 +506,7 @@ def split_args_in_optional_and_positional(args):
         if i > 0:
             previous = args[i-1]
 
-        if ((not arg.startswith('--'))  and
+        if ((not arg.startswith('-'))  and
             (previous not in OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES)):
             positions.append(i)
 
