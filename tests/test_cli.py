@@ -964,10 +964,11 @@ def test_complex_info_logging(tmpdir, capsys):
         [bumpversion]
         files = fileE
         current_version = 0.4
-        serialize =
+        serialize = 
           {major}.{minor}.{patch}
           {major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+
         """).strip())
 
     with mock.patch("bumpversion.logger") as logger:
@@ -979,7 +980,7 @@ def test_complex_info_logging(tmpdir, capsys):
         info|[bumpversion]
         files = fileE
         current_version = 0.4
-        serialize =
+        serialize = 
           {major}.{minor}.{patch}
           {major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?|
@@ -1002,11 +1003,11 @@ def test_complex_info_logging(tmpdir, capsys):
         info|[bumpversion]
         files = fileE
         current_version = 0.4.1
-        serialize =
+        serialize = 
         	{major}.{minor}.{patch}
         	{major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
-
+    
         |
         """).strip()
 
@@ -1073,7 +1074,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         current_version = 0.8.1
         commit = True
         tag = True
-        serialize =
+        serialize = 
         	{major}.{minor}.{patch}
         	{major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
