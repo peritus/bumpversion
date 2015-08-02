@@ -107,6 +107,9 @@ optional arguments:
                         {current_version})
   --replace REPLACE     Template for complete string to replace (default:
                         {new_version})
+  --post-hook POST_HOOK
+                        Hook function to run on text after normal replacement
+                        (default: None)
   --current-version VERSION
                         Version that needs to be updated (default: None)
   --dry-run, -n         Don't write any files, just pretend. (default: False)
@@ -204,6 +207,17 @@ def test_simple_replacement(tmpdir):
     tmpdir.chdir()
     main(shlex_split("patch --current-version 1.2.0 --new-version 1.2.1 VERSION"))
     assert "1.2.1" == tmpdir.join("VERSION").read()
+
+
+def test_post_hook(tmpdir):
+    tmpdir.join("VERSION").write("v1.2.0")
+    tmpdir.chdir()
+    tmpdir.join("foo.py").write("""def hook(s, current_version, new_version):
+        return 'hook-{}-{}-{}'.format(s, current_version, new_version)
+    """)
+    sys.path.append(str(tmpdir))
+    main(shlex_split("patch --post-hook foo.hook --current-version 1.2.0 --new-version 1.2.1 VERSION"))
+    assert "hook-v1.2.1-1.2.0-1.2.1" == tmpdir.join("VERSION").read()
 
 
 def test_simple_replacement_in_utf8_file(tmpdir):

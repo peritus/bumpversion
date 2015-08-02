@@ -27,6 +27,7 @@ from tempfile import NamedTemporaryFile
 
 import sys
 import codecs
+import importlib
 
 if sys.version_info[0] == 2:
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
@@ -187,6 +188,13 @@ VCS = [Git, Mercurial]
 def prefixed_environ():
     return dict((("${}".format(key), value) for key, value in os.environ.items()))
 
+def import_attribute(name):
+    """Return an attribute from a dotted path name (e.g. "path.to.func")."""
+    module_name, attribute = name.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    return getattr(module, attribute)
+
+
 class ConfiguredFile(object):
 
     def __init__(self, path, versionconfig):
@@ -229,7 +237,7 @@ class ConfiguredFile(object):
                     return True
         return False
 
-    def replace(self, current_version, new_version, context, dry_run):
+    def replace(self, current_version, new_version, context, dry_run, post_hook):
 
         with io.open(self.path, 'rb') as f:
             file_content_before = f.read().decode('utf-8')
@@ -250,6 +258,11 @@ class ConfiguredFile(object):
                 current_version.original,
                 replace_with,
             )
+
+        if post_hook is not None:
+            file_content_after = post_hook(file_content_after,
+                                           context['current_version'],
+                                           context['new_version'])
 
         if file_content_before != file_content_after:
             logger.info("{} file {}:".format(
@@ -571,6 +584,7 @@ OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--serialize',
     '--search',
     '--replace',
+    '--post-hook',
     '--tag-name',
 ]
 
@@ -785,6 +799,10 @@ def main(original_args=None):
     parser2.add_argument('--replace', metavar='REPLACE',
                          help='Template for complete string to replace',
                          default=defaults.get("replace", '{new_version}'))
+    parser2.add_argument('--post-hook', metavar='POST_HOOK',
+                         help='Hook function to run on text after normal replacement',
+                         default=None)
+
 
     known_args, remaining_argv = parser2.parse_known_args(args)
 
@@ -911,9 +929,12 @@ def main(original_args=None):
     for f in files:
         f.should_contain_version(current_version, context)
 
+    # load post-hook
+    post_hook = import_attribute(args.post_hook) if args.post_hook else None
+
     # change version string in files
     for f in files:
-        f.replace(current_version, new_version, context, args.dry_run)
+        f.replace(current_version, new_version, context, args.dry_run, post_hook)
 
     commit_files = [f.path for f in files]
 

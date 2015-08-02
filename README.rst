@@ -310,6 +310,22 @@ Options
 Most of the configuration values above can also be given as an option.
 Additionally, the following options are available:
 
+``--post-hook POST_HOOK``
+  Python hook function to run on each block of text being replaced. The hook
+  function is called once for each bumped file with arguments:
+
+  - ``s`` - the text of the file after version replacement
+  - ``current_version`` - the current version
+  - ``new_version`` - the new version
+
+  The return value of the hook is used as the new text of the file. The hook
+  is called after version replacement but before other actions like version
+  control commits.
+
+  Example::
+    def my_expand_newlines_hook(s, current_version, new_version):
+        return s.replace('-newline-', '\n')
+
 ``--dry-run, -n``
   Don't touch any files, just pretend. Best used with ``--verbose``.
 
