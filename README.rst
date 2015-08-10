@@ -123,7 +123,7 @@ General configuration is grouped in a ``[bumpversion]`` section.
   Also available on the command line as ``(--tag | --no-tag)``.
 
 ``tag_name =``
-  **default:** "``v{new_version}``" 
+  **default:** ``v{new_version}``
 
   The name of the tag that will be created. Only valid when using ``--tag`` / ``tag = True``.
 
@@ -145,7 +145,7 @@ General configuration is grouped in a ``[bumpversion]`` section.
   Also available as ``(--commit | --no-commit)``.
 
 ``message =`` 
-  **default:** "``Bump version: {current_version} → {new_version}``"
+  **default:** ``Bump version: {current_version} → {new_version}``
 
   The commit message to use when creating a commit. Only valid when using ``--commit`` / ``commit = True``.
 
@@ -234,7 +234,7 @@ File specific configuration
 ``[bumpversion:file:…]``
 
 ``parse =``
-  **default:** "``(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)``"
+  **default:** ``(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)``
 
   Regular expression (using `Python regular expression syntax
   <http://docs.python.org/2/library/re.html#regular-expression-syntax>`_) on
@@ -246,7 +246,7 @@ File specific configuration
   Also available as ``--parse``
 
 ``serialize =``
-  **default:** "``{major}.{minor}.{patch}``"
+  **default:** ``{major}.{minor}.{patch}``
 
   Template specifying how to serialize the version parts back to a version
   string.
@@ -272,7 +272,7 @@ File specific configuration
   given like ``--serialize {major}.{minor} --serialize {major}``
 
 ``search =``
-  **default:** "``{current_version}``"
+  **default:** ``{current_version}``
 
   Template string how to search for the string to be replaced in the file.
   Useful if the remotest possibility exists that the current version number
@@ -281,7 +281,7 @@ File specific configuration
   <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
 
 ``replace =``
-  **default:** "``{new_version}``"
+  **default:** ``{new_version}``
 
   Template to create the string that will replace the current version number in
   the file.
