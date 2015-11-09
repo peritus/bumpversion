@@ -718,7 +718,7 @@ def main(original_args=None):
 
         for section_name in config.sections():
 
-            section_name_match = re.compile("^bumpversion:(file|part):([^:]+)").match(section_name)
+            section_name_match = re.compile("^bumpversion:(file|part).*?:(.+)").match(section_name)
 
             if not section_name_match:
                 continue
