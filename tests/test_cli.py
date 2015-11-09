@@ -964,10 +964,11 @@ def test_complex_info_logging(tmpdir, capsys):
         [bumpversion]
         files = fileE
         current_version = 0.4
-        serialize =
+        serialize = 
           {major}.{minor}.{patch}
           {major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+
         """).strip())
 
     with mock.patch("bumpversion.logger") as logger:
@@ -979,7 +980,7 @@ def test_complex_info_logging(tmpdir, capsys):
         info|[bumpversion]
         files = fileE
         current_version = 0.4
-        serialize =
+        serialize = 
           {major}.{minor}.{patch}
           {major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?|
@@ -1006,7 +1007,7 @@ def test_complex_info_logging(tmpdir, capsys):
         	{major}.{minor}.{patch}
         	{major}.{minor}
         parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
-        
+    
         |
         """).strip()
 
@@ -1143,7 +1144,7 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         current_version = 0.3.4
         commit = False
         tag = False
-        
+
         |
         info|Would prepare Git commit|
         info|Would add changes in file 'please_touch_me.txt' to Git|
@@ -1260,7 +1261,7 @@ def test_optional_value_from_documentation(tmpdir):
       serialize =
         {num}.{release}
         {num}
-  
+
       [bumpversion:part:release]
       optional_value = gamma
       values =
@@ -1516,7 +1517,7 @@ def test_search_replace_expanding_changelog(tmpdir, capsys):
     * Another old nice feature
 
     """))
-    
+
     config_content = dedent("""
       [bumpversion]
       current_version = 8.1.1
@@ -1621,18 +1622,18 @@ def test_file_specific_config_inherits_parse_serialize(tmpdir):
       [bumpversion]
       current_version = 14-chocolate
       parse = (?P<major>\d+)(\-(?P<flavor>[a-z]+))?
-      serialize = 
+      serialize =
       	{major}-{flavor}
       	{major}
 
       [bumpversion:file:todays_icecream]
-      serialize = 
+      serialize =
       	{major}-{flavor}
 
       [bumpversion:file:todays_cake]
 
       [bumpversion:part:flavor]
-      values = 
+      values =
       	vanilla
       	chocolate
       	strawberry
