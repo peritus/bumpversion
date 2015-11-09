@@ -1,9 +1,31 @@
-from bumpversion.functions import NumericFunction, ValuesFunction
+from bumpversion.functions import NumericFunction, ValuesFunction, DateFunction
 
 class PartConfiguration(object):
     function_cls = NumericFunction
 
     def __init__(self, *args, **kwds):
+
+        functions_dict = {
+            'numeric': NumericFunction,
+            'values': ValuesFunction,
+            'date': DateFunction
+        }
+
+        # Get the function to be used, if set
+        try:
+            function = kwds.pop('function')
+
+            try:
+                self.function_cls = functions_dict[function]
+            except KeyError:
+                raise ValueError("Function '{}' is not supported".format(function))
+        except KeyError:
+            if 'values' in kwds:
+                self.function_cls = ValuesFunction
+            else:
+                # This is the default function
+                self.function_cls = NumericFunction
+
         self.function = self.function_cls(*args, **kwds)
 
     @property
@@ -18,14 +40,6 @@ class PartConfiguration(object):
         return self.function.bump(value)
 
 
-class ConfiguredVersionPartConfiguration(PartConfiguration):
-    function_cls = ValuesFunction
-
-
-class NumericVersionPartConfiguration(PartConfiguration):
-    function_cls = NumericFunction
-
-
 class VersionPart(object):
 
     """
@@ -37,9 +51,9 @@ class VersionPart(object):
         self._value = value
 
         if config is None:
-            config = NumericVersionPartConfiguration()
-
-        self.config = config
+            self.config = PartConfiguration()
+        else:
+            self.config = config
 
     @property
     def value(self):

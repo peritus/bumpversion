@@ -28,7 +28,7 @@ from tempfile import NamedTemporaryFile
 import sys
 import codecs
 
-from bumpversion.version_part import VersionPart, NumericVersionPartConfiguration, ConfiguredVersionPartConfiguration
+from bumpversion.version_part import VersionPart, PartConfiguration
 
 if sys.version_info[0] == 2:
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
@@ -340,7 +340,7 @@ class VersionConfig(object):
     Holds a complete representation of a version string
     """
 
-    def __init__(self, parse, serialize, search, replace, part_configs=None):
+    def __init__(self, parse, serialize, search, replace, part_configs={}):
 
         try:
             self.parse_regex = re.compile(parse, re.VERBOSE)
@@ -349,9 +349,6 @@ class VersionConfig(object):
             raise e
 
         self.serialize_formats = serialize
-
-        if not part_configs:
-            part_configs = {}
 
         self.part_configs = part_configs
         self.search = search
@@ -647,13 +644,13 @@ def main(original_args=None):
 
             if section_prefix == "part":
 
-                ThisVersionPartConfiguration = NumericVersionPartConfiguration
-
                 if 'values' in section_config:
-                    section_config['values'] = list(filter(None, (x.strip() for x in section_config['values'].splitlines())))
-                    ThisVersionPartConfiguration = ConfiguredVersionPartConfiguration
+                    if not 'function' in section_config:
+                        warnings.warn("Using a values-based version part without specifying 'function = values' will be deprecated.", PendingDeprecationWarning)
 
-                part_configs[section_value] = ThisVersionPartConfiguration(**section_config)
+                    section_config['values'] = list(filter(None, (x.strip() for x in section_config['values'].splitlines())))
+
+                part_configs[section_value] = PartConfiguration(**section_config)
 
             elif section_prefix == "file":
 

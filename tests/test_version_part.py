@@ -2,13 +2,9 @@ import pytest
 
 from bumpversion.version_part import *
 
-@pytest.fixture(params=[None, (('0', '1', '2'),), (('0', '3'),)])
+@pytest.fixture(params=[{}, {'values':('0', '1', '2')}, {'values':('0', '3')}])
 def confvpc(request):
-    if request.param is None:
-        return NumericVersionPartConfiguration()
-    else:
-        return ConfiguredVersionPartConfiguration(*request.param)
-
+    return PartConfiguration(**request.param)
 
 # VersionPart
 
