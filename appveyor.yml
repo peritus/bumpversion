@@ -27,7 +27,7 @@ install:
   - "%PYTHON%/python.exe C:/get-pip.py"
   - "%PYTHON%/Scripts/pip.exe install virtualenv"
   - "%PYTHON%/Scripts/pip.exe install tox"
-  - "%PYTHON%/Scripts/pip.exe install mercurial"
+  - cinst hg
   - "%PYTHON%/Scripts/pip.exe install -e ."
 
   - 'git config --global user.email "bumpversion-test-git@appveyor.ci"'
