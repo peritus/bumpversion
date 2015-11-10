@@ -177,42 +177,49 @@ For advanced versioning schemes, non-numeric parts may be desirable (e.g. to
 identify `alpha or beta versions
 <http://en.wikipedia.org/wiki/Software_release_life_cycle#Stages_of_development>`_,
 to indicate the stage of development, the flavor of the software package or
-a release name). To do so, you can use a ``[bumpversion:part:…]`` section
+a release name). To do so, you can use a ``[bumpversion:part:<part_name>]`` section
 containing the part's name (e.g. a part named ``release_name`` is configured in
 a section called ``[bumpversion:part:release_name]``.
 
 The following options are valid inside a part configuration:
 
-``values =``
+``function =``
   **default**: numeric (i.e. ``0``, ``1``, ``2``, …)
 
-  Explicit list of all values that will be iterated when bumping that specific
-  part.
+  This sets the function used to manage the part and the strategy to increment it.
+  Every function has its own configuration parameters which are specified just after
+  the function like ``<parameter> = <value>``. Every function has an optional value,
+  which is a value that can be omitted when representing the version (e.g. in a two-parts
+  version ``v4`` is the same as ``v4.0``. In this case the second part has an optional
+  value of ``0``). In bumpversion parts lingo 'optional' is the same as 'default'.
+
+  The list of currently available functions is: ``numeric``, ``values``, ``date``.
+  
+  ``numeric`` - This considers the part a single integer with an increment of 1.
+  You may specify the initial value through the ``first_value`` parameter, otherwise
+  it is ``0``. The optional value is ``first_value``.
+
+  This function also supports alphanumeric parts, altering just the numeric section
+  (e.g. 'r3' --> 'r4'). Only the first numeric group found in the part is considered
+  (e.g. 'r3-001' --> 'r4-001').
 
   Example::
 
-    [bumpversion:part:release_name]
-    values =
-      witty-warthog
-      ridiculous-rat
-      marvelous-mantis
+    [bumpversion:part:major]
+    function = numeric
+    first_value = rel1
 
-``optional_value =``
-  **default**: The first entry in ``values =``.
-
-  If the value of the part matches this value it is considered optional, i.e.
-  it's representation in a ``--serialize`` possibility is not required.
+  ``values`` - This uses as values of the part the element of a list that must be
+  specified through the ``values`` parameter. The optional value of the part is the
+  first value of the list. If you try to bump a part which has already the maximum
+  value of the list you get a ValueError exception. You may specify both the ``first_value``
+  and the ``optional_value``. If not given they are both equal to the first value of
+  the list. If specified, each of them shall be included in the given list of values.
 
   Example::
 
-    [bumpversion]
-    current_version = 1.alpha
-    parse = (?P<num>\d+)\.(?P<release>.*)
-    serialize =
-      {num}.{release}
-      {num}
-
-    [bumpversion:part:release]
+    [bumpversion:part:status]
+    function = values
     optional_value = gamma
     values =
       alpha
@@ -223,10 +230,26 @@ The following options are valid inside a part configuration:
   ``bumpversion release`` again would bump ``1.beta`` to ``1``, because
   `release` being ``gamma`` is configured optional.
 
-``first_value =``
-  **default**: The first entry in ``values =``.
+    [bumpversion:part:release_name]
+    function = values
+    values =
+      witty-warthog
+      ridiculous-rat
+      marvelous-mantis
 
-  When the part is reset, the value will be set to the value specified here.
+  ``date`` - This function returns the current date formatted by default as ``%Y%m%d%H%M%S``
+  according to the ``strftime`` and ``strptime`` functions language (see
+  https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior
+    or https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior).
+
+  You may specify an alternative formatting string through the ``format`` parameter.
+
+  Example::
+
+    [bumpversion:part:release_name]
+    function = date
+    format = %Y%m%d
+
 
 File specific configuration
 ---------------------------
