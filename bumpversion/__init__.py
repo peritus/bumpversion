@@ -340,7 +340,7 @@ class VersionConfig(object):
     Holds a complete representation of a version string
     """
 
-    def __init__(self, parse, serialize, search, replace, part_configs={}):
+    def __init__(self, parse, serialize, search, replace, part_configs=None):
 
         try:
             self.parse_regex = re.compile(parse, re.VERBOSE)
@@ -349,7 +349,10 @@ class VersionConfig(object):
             raise e
 
         self.serialize_formats = serialize
-
+        
+        if not part_configs:
+            part_configs = {}
+            
         self.part_configs = part_configs
         self.search = search
         self.replace = replace
