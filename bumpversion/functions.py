@@ -87,3 +87,29 @@ class ValuesFunction(object):
             raise ValueError(
                 "The part has already the maximum value among {} and cannot be bumped.".format(self._values))
 
+class DateFunction(object):
+
+    """
+    This is a class that provides a date based engine for version parts.
+    It is initialized with a format according to the strftime() and strptime()
+    rules (see https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior
+    or https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior).
+
+    The first value and the default value of this field are equal to the Unix
+    Epoch (00:00:00 1st January 1970) but given the meaning of the data should
+    be never used (either that or you are Emmett Brown).
+
+    When bumped, this field returns always the current date and time formatted
+    with the given format.
+    """
+
+    def __init__(self, format='%Y%m%d%H%M%S'):
+        self._format = format
+
+        unix_epoch = datetime.datetime.strptime(
+            '19700101000000', '%Y%m%d%H%M%S')
+        self.first_value = unix_epoch.strftime(self._format)
+        self.optional_value = self.first_value
+
+    def bump(self, value=None):
+        return datetime.datetime.now().strftime(self._format)

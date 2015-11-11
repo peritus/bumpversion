@@ -6,6 +6,7 @@ import pytest
 import sys
 import logging
 import mock
+from datetime import datetime
 
 import argparse
 import subprocess
@@ -1220,33 +1221,134 @@ def test_no_list_no_stdout(tmpdir, vcs):
 
     assert out == ""
 
-def test_bump_non_numeric_parts(tmpdir, capsys):
-    tmpdir.join("with_prereleases.txt").write("1.5.dev")
+def test_bump_explicit_numeric_part(tmpdir, capsys):
+    tmpdir.join("explicit_numeric.txt").write("1.rel1")
     tmpdir.chdir()
 
     tmpdir.join(".bumpversion.cfg").write(dedent("""
         [bumpversion]
-        files = with_prereleases.txt
-        current_version = 1.5.dev
-        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<release>[a-z]+))?
-        serialize =
-          {major}.{minor}.{release}
-          {major}.{minor}
+        files = explicit_numeric.txt
+        current_version = 1.rel1
+        parse = (?P<major>\d+)\.(?P<minor>[a-z0-9]+)
+        serialize = {major}.{minor}
 
         [bumpversion:part:release]
-        optional_value = gamma
-        values =
-          dev
-          gamma
+        function = numeric
         """).strip())
-
-    main(['release', '--verbose'])
-
-    assert '1.5' == tmpdir.join("with_prereleases.txt").read()
 
     main(['minor', '--verbose'])
 
-    assert '1.6.dev' == tmpdir.join("with_prereleases.txt").read()
+    assert '1.rel2' == tmpdir.join("explicit_numeric.txt").read()
+
+def test_bump_explicit_numeric_part_with_first_value(tmpdir, capsys):
+    tmpdir.join("explicit_numeric_with_first_value.txt").write("1.rel1")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = explicit_numeric_with_first_value.txt
+        current_version = 1.rel1
+        parse = (?P<major>\d+)\.(?P<minor>[a-z0-9]+)
+        serialize = {major}.{minor}
+
+        [bumpversion:part:minor]
+        function = numeric
+        first_value = rel1
+        """).strip())
+
+    main(['major', '--verbose'])
+
+    assert '2.rel1' == tmpdir.join("explicit_numeric_with_first_value.txt").read()
+
+def test_bump_values_part(tmpdir, capsys):
+    tmpdir.join("values.txt").write("1.alpha")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = values.txt
+        current_version = 1.alpha
+        parse = (?P<major>\d+)\.(?P<minor>[a-z]+)
+        serialize = {major}.{minor}
+
+        [bumpversion:part:minor]
+        function = values
+        values = 
+            alpha
+            beta
+            stable
+        """).strip())
+
+    main(['minor', '--verbose'])
+
+    assert '1.beta' == tmpdir.join("values.txt").read()
+
+    main(['major', '--verbose'])
+
+    assert '2.alpha' == tmpdir.join("values.txt").read()
+
+    with pytest.raises(ValueError):
+        main(['minor', '--verbose'])
+        main(['minor', '--verbose'])
+        main(['minor', '--verbose'])
+
+def test_bump_values_part_without_values_function(tmpdir, capsys):
+    # This test ensures backward compatibility with the previous
+    # configuration schema
+
+    tmpdir.join("values.txt").write("1.alpha")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = values.txt
+        current_version = 1.alpha
+        parse = (?P<major>\d+)\.(?P<minor>[a-z]+)
+        serialize = {major}.{minor}
+
+        [bumpversion:part:minor]
+        values = 
+            alpha
+            beta
+            stable
+        """).strip())
+
+    main(['minor', '--verbose'])
+
+    assert '1.beta' == tmpdir.join("values.txt").read()
+
+    main(['major', '--verbose'])
+
+    assert '2.alpha' == tmpdir.join("values.txt").read()
+
+    with pytest.raises(ValueError):
+        main(['minor', '--verbose'])
+        main(['minor', '--verbose'])
+        main(['minor', '--verbose'])
+
+def test_bump_date_part(tmpdir, capsys):
+    tmpdir.join("date.txt").write("1.20150101090000")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = date.txt
+        current_version = 1.20150101090000
+        parse = (?P<major>\d+)\.(?P<minor>[0-9]+)
+        serialize = {major}.{minor}
+
+        [bumpversion:part:minor]
+        function = date
+        """).strip())
+
+    main(['minor', '--verbose'])
+
+    new_version = tmpdir.join("date.txt").read()
+
+    major, minor = new_version.split('.')
+
+    assert major == '1'
+    assert datetime.strptime(minor, '%Y%m%d%H%M%S') > datetime.strptime('20150101090000', '%Y%m%d%H%M%S')
 
 def test_optional_value_from_documentation(tmpdir):
 
