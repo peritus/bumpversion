@@ -79,6 +79,7 @@ EXPECTED_OPTIONS = """
 [--commit | --no-commit]
 [--tag | --no-tag]
 [--tag-name TAG_NAME]
+[--tag-message TAG_MESSAGE]
 [--message COMMIT_MSG]
 part
 [file [file ...]]
@@ -120,6 +121,9 @@ optional arguments:
   --no-tag              Do not create a tag in version control
   --tag-name TAG_NAME   Tag name (only works with --tag) (default:
                         v{new_version})
+  --tag-message TAG_MESSAGE
+                        Tag message (default: Bump version: {current_version}
+                        → {new_version})
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
@@ -734,6 +738,80 @@ tag_name: from-{current_version}-to-{new_version}""")
 
     assert b'from-400.0.0-to-401.0.0' in tag_out
 
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_unannotated_tag(tmpdir, vcs):
+    tmpdir.chdir()
+    check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("42.3.1")
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    main(['patch', '--current-version', '42.3.1', '--commit', '--tag', 'VERSION', '--tag-name', 'ReleasedVersion-{new_version}', '--tag-message', ''])
+
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    assert b'ReleasedVersion-42.3.2' in tag_out
+
+    if vcs == "git":
+        describe_out = subprocess.call([vcs, "describe"])
+        assert 128 == describe_out
+
+        describe_out = subprocess.check_output([vcs, "describe", "--tags"])
+        assert describe_out.startswith(b'ReleasedVersion-42.3.2')
+
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_annotated_tag(tmpdir, vcs):
+    tmpdir.chdir()
+    check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("42.4.1")
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    main(['patch', '--current-version', '42.4.1', '--commit', '--tag', 'VERSION', '--tag-message', 'test {new_version}-tag'])
+    assert '42.4.2' == tmpdir.join("VERSION").read()
+
+    tag_out = check_output([vcs, {"git": "tag", "hg": "tags"}[vcs]])
+    assert b'v42.4.2' in tag_out
+
+    if vcs == "git":
+        describe_out = subprocess.check_output([vcs, "describe"])
+        assert describe_out == b'v42.4.2\n'
+
+        describe_out = subprocess.check_output([vcs, "show", "v42.4.2"])
+        assert describe_out.startswith(b"tag v42.4.2\n")
+        assert b'test 42.4.2-tag' in describe_out
+    elif vcs == "hg":
+        describe_out = subprocess.check_output([vcs, "log"])
+        assert b'test 42.4.2-tag' in describe_out
+    else:
+        raise ValueError("Unknown VCS")
+
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git")])
+def test_vcs_describe(tmpdir, vcs):
+    tmpdir.chdir()
+    check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("42.5.1")
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    main(['patch', '--current-version', '42.5.1', '--commit', '--tag', 'VERSION', '--tag-message', 'test {new_version}-tag'])
+    assert '42.5.2' == tmpdir.join("VERSION").read()
+
+    describe_out = subprocess.check_output([vcs, "describe"])
+    assert b'v42.5.2\n' == describe_out
+
+    main(['patch', '--current-version', '42.5.2', '--commit', '--tag', 'VERSION', '--tag-name', 'ReleasedVersion-{new_version}', '--tag-message', ''])
+    assert '42.5.3' == tmpdir.join("VERSION").read()
+
+    describe_only_annotated_out = subprocess.check_output([vcs, "describe"])
+    assert describe_only_annotated_out.startswith(b'v42.5.2-1-g')
+
+    describe_all_out = subprocess.check_output([vcs, "describe", "--tags"])
+    assert b'ReleasedVersion-42.5.3\n' == describe_all_out
+
+
 config_parser_handles_utf8 = True
 try:
     import configparser
@@ -1083,7 +1161,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         info|Would add changes in file 'dont_touch_me.txt' to Git|
         info|Would add changes in file '.bumpversion.cfg' to Git|
         info|Would commit to Git with message 'Bump version: 0.8 \u2192 0.8.1'|
-        info|Would tag 'v0.8.1' in Git|
+        info|Would tag 'v0.8.1' with message 'Bump version: 0.8 \u2192 0.8.1' in Git|
         """).strip()
 
     if vcs == "hg":
@@ -1149,7 +1227,7 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         info|Would add changes in file 'please_touch_me.txt' to Git|
         info|Would add changes in file '.bumpversion.cfg' to Git|
         info|Would commit to Git with message 'Bump version: 0.3.3 \u2192 0.3.4'|
-        info|Would tag 'v0.3.4' in Git|
+        info|Would tag 'v0.3.4' with message 'Bump version: 0.3.3 \u2192 0.3.4' in Git|
         """).strip()
 
     if vcs == "hg":
