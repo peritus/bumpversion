@@ -384,8 +384,24 @@ Changes
 =======
 
 **unreleased**
+
 **v0.5.4**
-**v0.5.4-dev**
+
+- Add the license file to the sdist on PyPI
+  (thanks @benoit-monin `#85 <https://github.com/peritus/bumpversion/pull/85>`_)
+- Include tests in PyPI package
+- Fix: Add ``HOME`` to the list of environment variables passed by Tox
+  (thanks @igiordani `#90 <https://github.com/peritus/bumpversion/pull/90>`_)
+- Allow package to be invoked as ``python -m bumpversion``
+  (thanks @benoit-monin `#85 <https://github.com/peritus/bumpversion/pull/85>`_)
+- Refactored classes that manipulate versions and added tests
+  (thanks @igiordani `#98 <https://github.com/peritus/bumpversion/pull/98>`_)
+- Improved documentation formatting and added example for usage of ``--list``
+  option (thanks @coredumperror `#112
+  <https://github.com/peritus/bumpversion/pull/112>`_ and
+  @igiordani `#97 <https://github.com/peritus/bumpversion/pull/97>`_)
+- Fix bug with short flags (thanks @inirudebwoy)
+
 
 **v0.5.3**
 
