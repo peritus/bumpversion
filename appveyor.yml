@@ -17,6 +17,9 @@ environment:
     - PYTHON: "C:/Python34"
       TOXENV: "py34"
 
+    - PYTHON: "C:/Python35"
+      TOXENV: "py35"
+
 init:
   - "ECHO %TOXENV%"
   - "ECHO %PYTHON%"
