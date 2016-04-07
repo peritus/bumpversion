@@ -207,7 +207,7 @@ The following options are valid inside a part configuration:
 
     [bumpversion]
     current_version = 1.alpha
-    parse = (?P<num>\d+)\.(?P<release>.*)
+    parse = (?P<num>\d+)(\.(?P<release>.*))?
     serialize =
       {num}.{release}
       {num}
