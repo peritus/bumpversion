@@ -14,7 +14,7 @@ install:
   - git config --list
   - echo -e '[ui]\nusername = Testing Mercurial on Travis CI <bumpversion-test-hg@travis.ci>' > ~/.hgrc
   - hg --version
-  - pip install --upgrade pytest tox
+  - travis_retry pip install "virtualenv<14.0.0" pytest tox
 
 script:
   - tox -e $TOX_ENV
