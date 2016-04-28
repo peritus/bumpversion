@@ -21,7 +21,7 @@ from bumpversion import main, DESCRIPTION, WorkingDirectoryIsDirtyException, \
     split_args_in_optional_and_positional
 
 SUBPROCESS_ENV = dict(
-    list(environ.items()) + [(b'HGENCODING', b'utf-8')]
+    list(environ.items()) + [(str('HGENCODING'), str('utf-8'))]
 )
 
 call = partial(subprocess.call, env=SUBPROCESS_ENV)
