@@ -38,6 +38,15 @@ xfail_if_no_hg = pytest.mark.xfail(
   reason="hg is not installed"
 )
 
+def py_with_difflib_bug(*args, **kwargs):
+    # these versions include count in unified_diff() header
+    # even if only one line has changed 
+    # e.g. @@ +1,1 -1,1 @@ instead of @@ +1 -1 @@
+    return sys.version_info >= (2,7,10) and sys.version_info <= (3,2)
+
+def py_without_difflib_bug(*args, **kwargs):
+    return not py_with_difflib_bug(*args, **kwargs)
+
 @pytest.fixture(params=['.bumpversion.cfg', 'setup.cfg'])
 def configfile(request):
     return request.param
@@ -878,7 +887,44 @@ parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
 
     assert '0.6.1' == tmpdir.join("fileD").read()
 
+@pytest.mark.skipif(py_without_difflib_bug)
+def test_log_no_config_file_info_message_with_difflib_bug(tmpdir, capsys):
+    tmpdir.chdir()
 
+    tmpdir.join("blargh.txt").write("1.0.0")
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['--verbose', '--verbose', '--current-version', '1.0.0', 'patch', 'blargh.txt'])
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    EXPECTED_LOG = dedent("""
+        info|Could not read config file at .bumpversion.cfg|
+        info|Parsing version '1.0.0' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=1, minor=0, patch=0|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=1, minor=0, patch=1|
+        info|Parsing version '1.0.1' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=1, minor=0, patch=1|
+        info|New version will be '1.0.1'|
+        info|Asserting files blargh.txt contain the version string:|
+        info|Found '1.0.0' in blargh.txt at line 0: 1.0.0|
+        info|Changing file blargh.txt:|
+        info|--- a/blargh.txt
+        +++ b/blargh.txt
+        @@ -1,1 +1,1 @@
+        -1.0.0
+        +1.0.1|
+        info|Would write to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        current_version = 1.0.1
+
+        |
+    """).strip()
+
+    assert actual_log == EXPECTED_LOG
+
+@pytest.mark.skipif(py_with_difflib_bug)
 def test_log_no_config_file_info_message(tmpdir, capsys):
     tmpdir.chdir()
 
@@ -956,6 +1002,66 @@ def test_log_invalid_regex_exit(tmpdir):
 
     assert actual_log == EXPECTED_LOG
 
+@pytest.mark.skipif(py_without_difflib_bug)
+def test_complex_info_logging_with_difflib_bug(tmpdir, capsys):
+    tmpdir.join("fileE").write("0.4")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = fileE
+        current_version = 0.4
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+        """).strip())
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['patch'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|Reading config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = fileE
+        current_version = 0.4
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?|
+        info|Parsing version '0.4' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=4, patch=0|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=0, minor=4, patch=1|
+        info|Parsing version '0.4.1' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=4, patch=1|
+        info|New version will be '0.4.1'|
+        info|Asserting files fileE contain the version string:|
+        info|Found '0.4' in fileE at line 0: 0.4|
+        info|Changing file fileE:|
+        info|--- a/fileE
+        +++ b/fileE
+        @@ -1,1 +1,1 @@
+        -0.4
+        +0.4.1|
+        info|Writing to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = fileE
+        current_version = 0.4.1
+        serialize = 
+        	{major}.{minor}.{patch}
+        	{major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+        
+        |
+        """).strip()
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert actual_log == EXPECTED_LOG
+
+@pytest.mark.skipif(py_with_difflib_bug)
 def test_complex_info_logging(tmpdir, capsys):
     tmpdir.join("fileE").write("0.4")
     tmpdir.chdir()
@@ -1014,7 +1120,86 @@ def test_complex_info_logging(tmpdir, capsys):
 
     assert actual_log == EXPECTED_LOG
 
+@pytest.mark.skipif(py_without_difflib_bug)
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_subjunctive_dry_run_logging_with_difflib_bug(tmpdir, vcs):
+    tmpdir.join("dont_touch_me.txt").write("0.8")
+    tmpdir.chdir()
 
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = dont_touch_me.txt
+        current_version = 0.8
+        commit = True
+        tag = True
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?"""
+    ).strip())
+
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "dont_touch_me.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['patch', '--dry-run'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|Reading config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = dont_touch_me.txt
+        current_version = 0.8
+        commit = True
+        tag = True
+        serialize =
+          {major}.{minor}.{patch}
+          {major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?|
+        info|Parsing version '0.8' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=8, patch=0|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=0, minor=8, patch=1|
+        info|Dry run active, won't touch any files.|
+        info|Parsing version '0.8.1' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=8, patch=1|
+        info|New version will be '0.8.1'|
+        info|Asserting files dont_touch_me.txt contain the version string:|
+        info|Found '0.8' in dont_touch_me.txt at line 0: 0.8|
+        info|Would change file dont_touch_me.txt:|
+        info|--- a/dont_touch_me.txt
+        +++ b/dont_touch_me.txt
+        @@ -1,1 +1,1 @@
+        -0.8
+        +0.8.1|
+        info|Would write to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = dont_touch_me.txt
+        current_version = 0.8.1
+        commit = True
+        tag = True
+        serialize = 
+        	{major}.{minor}.{patch}
+        	{major}.{minor}
+        parse = (?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?
+
+        |
+        info|Would prepare Git commit|
+        info|Would add changes in file 'dont_touch_me.txt' to Git|
+        info|Would add changes in file '.bumpversion.cfg' to Git|
+        info|Would commit to Git with message 'Bump version: 0.8 \u2192 0.8.1'|
+        info|Would tag 'v0.8.1' in Git|
+        """).strip()
+
+    if vcs == "hg":
+        EXPECTED_LOG = EXPECTED_LOG.replace("Git", "Mercurial")
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert actual_log == EXPECTED_LOG
+
+@pytest.mark.skipif(py_with_difflib_bug)
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_subjunctive_dry_run_logging(tmpdir, vcs):
     tmpdir.join("dont_touch_me.txt").write("0.8")
@@ -1093,7 +1278,73 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
 
     assert actual_log == EXPECTED_LOG
 
+@pytest.mark.skipif(py_without_difflib_bug)
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_log_commitmessage_if_no_commit_tag_but_usable_vcs_with_difflib_bug(tmpdir, vcs):
+    tmpdir.join("please_touch_me.txt").write("0.3.3")
+    tmpdir.chdir()
 
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        files = please_touch_me.txt
+        current_version = 0.3.3
+        commit = False
+        tag = False
+        """).strip())
+
+    check_call([vcs, "init"])
+    check_call([vcs, "add", "please_touch_me.txt"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['patch'])
+
+    # beware of the trailing space (" ") after "serialize =":
+    EXPECTED_LOG = dedent("""
+        info|Reading config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = please_touch_me.txt
+        current_version = 0.3.3
+        commit = False
+        tag = False|
+        info|Parsing version '0.3.3' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=0, minor=3, patch=3|
+        info|Attempting to increment part 'patch'|
+        info|Values are now: major=0, minor=3, patch=4|
+        info|Parsing version '0.3.4' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=0, minor=3, patch=4|
+        info|New version will be '0.3.4'|
+        info|Asserting files please_touch_me.txt contain the version string:|
+        info|Found '0.3.3' in please_touch_me.txt at line 0: 0.3.3|
+        info|Changing file please_touch_me.txt:|
+        info|--- a/please_touch_me.txt
+        +++ b/please_touch_me.txt
+        @@ -1,1 +1,1 @@
+        -0.3.3
+        +0.3.4|
+        info|Writing to config file .bumpversion.cfg:|
+        info|[bumpversion]
+        files = please_touch_me.txt
+        current_version = 0.3.4
+        commit = False
+        tag = False
+        
+        |
+        info|Would prepare Git commit|
+        info|Would add changes in file 'please_touch_me.txt' to Git|
+        info|Would add changes in file '.bumpversion.cfg' to Git|
+        info|Would commit to Git with message 'Bump version: 0.3.3 \u2192 0.3.4'|
+        info|Would tag 'v0.3.4' in Git|
+        """).strip()
+
+    if vcs == "hg":
+        EXPECTED_LOG = EXPECTED_LOG.replace("Git", "Mercurial")
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+
+    assert actual_log == EXPECTED_LOG
+
+@pytest.mark.skipif(py_with_difflib_bug)
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
 def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
     tmpdir.join("please_touch_me.txt").write("0.3.3")
