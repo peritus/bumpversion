@@ -28,7 +28,9 @@ Screencast
 Installation
 ============
 
-You can download and install the latest version of this software from the Python package index (PyPI) as follows::
+You can download and install the latest version of this software from the Python package index (PyPI) as follows:
+
+.. code-block:: shell
 
     pip install --upgrade bumpversion
 
@@ -39,7 +41,7 @@ There are two modes of operation: On the command line for single-file operation
 and using a `configuration file <#configuration>`_ for more complex multi-file
 operations.
 
-::
+.. code-block:: shell
 
     bumpversion [options] part [file]
 
@@ -49,9 +51,11 @@ operations.
 
   Valid values include those given in the ``--serialize`` / ``--parse`` option.
 
-  Example `bumping 0.5.1 to 0.6.0`::
+  Example `bumping 0.5.1 to 0.6.0`:
 
-     bumpversion --current-version 0.5.1 minor src/VERSION
+  .. code-block:: shell
+
+      bumpversion --current-version 0.5.1 minor src/VERSION
 
 ``[file]``
   **default: none** (optional)
@@ -62,9 +66,11 @@ operations.
   configuration file will be used. If no files are mentioned on the
   configuration file either, are no files will be modified.
 
-  Example `bumping 1.1.9 to 2.0.0`::
+  Example `bumping 1.1.9 to 2.0.0`:
 
-     bumpversion --current-version 1.1.9 major setup.py
+  .. code-block:: shell
+
+      bumpversion --current-version 1.1.9 major setup.py
 
 Configuration
 +++++++++++++
@@ -79,14 +85,16 @@ Options on the command line take precedence over those from the config file,
 which take precedence over those derived from the environment and then from the
 defaults.
 
-Example ``.bumpversion.cfg``::
+Example ``.bumpversion.cfg``:
 
-  [bumpversion]
-  current_version = 0.2.9
-  commit = True
-  tag = True
+.. code-block:: dosini
 
-  [bumpversion:file:setup.py]
+    [bumpversion]
+    current_version = 0.2.9
+    commit = True
+    tag = True
+
+    [bumpversion:file:setup.py]
 
 If no ``.bumpversion.cfg`` exists, ``bumpversion`` will also look into
 ``setup.cfg`` for configuration.
@@ -189,13 +197,15 @@ The following options are valid inside a part configuration:
   Explicit list of all values that will be iterated when bumping that specific
   part.
 
-  Example::
+  Example:
+  
+  .. code-block:: dosini
 
-    [bumpversion:part:release_name]
-    values =
-      witty-warthog
-      ridiculous-rat
-      marvelous-mantis
+      [bumpversion:part:release_name]
+      values =
+        witty-warthog
+        ridiculous-rat
+        marvelous-mantis
 
 ``optional_value =``
   **default**: The first entry in ``values =``.
@@ -203,21 +213,23 @@ The following options are valid inside a part configuration:
   If the value of the part matches this value it is considered optional, i.e.
   it's representation in a ``--serialize`` possibility is not required.
 
-  Example::
+  Example:
+  
+  .. code-block:: dosini
 
-    [bumpversion]
-    current_version = 1.alpha
-    parse = (?P<num>\d+)\.(?P<release>.*)
-    serialize =
-      {num}.{release}
-      {num}
+      [bumpversion]
+      current_version = 1.alpha
+      parse = (?P<num>\d+)\.(?P<release>.*)
+      serialize =
+        {num}.{release}
+        {num}
 
-    [bumpversion:part:release]
-    optional_value = gamma
-    values =
-      alpha
-      beta
-      gamma
+      [bumpversion:part:release]
+      optional_value = gamma
+      values =
+        alpha
+        beta
+        gamma
 
   Here, ``bumpversion release`` would bump ``1.alpha`` to ``1.beta``. Executing
   ``bumpversion release`` again would bump ``1.beta`` to ``1``, because
@@ -259,11 +271,13 @@ File specific configuration
 
   Can be specified multiple times, bumpversion will try the serialization
   formats beginning with the first and choose the last one where all values can
-  be represented like this::
+  be represented like this:
 
-    serialize =
-      {major}.{minor}
-      {major}
+  .. code-block:: dosini
+
+      serialize =
+        {major}.{minor}
+        {major}
 
   Given the example above, the new version *1.9* it will be serialized as
   ``1.9``, but the version *2.0* will be serialized as ``2``.
@@ -292,14 +306,16 @@ File specific configuration
     MyProject==1.5.6
 
   using this ``.bumpversion.cfg`` will ensure only the line containing
-  ``MyProject`` will be changed::
+  ``MyProject`` will be changed:
 
-    [bumpversion]
-    current_version = 1.5.6
+  .. code-block:: dosini
 
-    [bumpversion:file:requirements.txt]
-    search = MyProject=={current_version}
-    replace = MyProject=={new_version}
+      [bumpversion]
+      current_version = 1.5.6
+
+      [bumpversion:file:requirements.txt]
+      search = MyProject=={current_version}
+      replace = MyProject=={new_version}
 
   Can be multiple lines, templated using `Python Format String Syntax
   <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
@@ -345,12 +361,16 @@ new version, before applying the change.
 
 The standard way to get it in a bash script is
 
+.. code-block:: shell
+
     bumpversion --dry-run --list <part> | grep <field name> | sed -r s,"^.*=",,
 
 where <part> is as usual the part of the version number you are updating. You need to specify
 `--dry-run` to avoid bumpversion actually bumping the version number.
 
 For example, if you are updating the minor number and looking for the new version number this becomes
+
+.. code-block:: shell
 
     bumpversion --dry-run --list minor | grep new_version | sed -r s,"^.*=",,
 
@@ -365,7 +385,9 @@ workflow, as it is intended to be very versatile.
 How to release bumpversion itself
 +++++++++++++++++++++++++++++++++
 
-Execute the following commands::
+Execute the following commands:
+
+.. code-block:: shell
 
     git checkout master
     git pull
