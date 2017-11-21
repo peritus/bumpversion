@@ -28,10 +28,12 @@ from tempfile import NamedTemporaryFile
 import sys
 import codecs
 
+from bumpversion.version_part import VersionPart, NumericVersionPartConfiguration, ConfiguredVersionPartConfiguration
+
 if sys.version_info[0] == 2:
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
-__VERSION__ = '0.5.2-dev'
+__VERSION__ = '0.5.4-dev'
 
 DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
     __VERSION__,
@@ -283,90 +285,6 @@ class ConfiguredFile(object):
     def __repr__(self):
         return '<bumpversion.ConfiguredFile:{}>'.format(self.path)
 
-class VersionPartConfiguration(object):
-    pass
-
-class ConfiguredVersionPartConfiguration(object):
-
-    def __init__(self, values, optional_value=None, first_value=None):
-
-        assert len(values) > 0
-
-        self._values = values
-
-        if optional_value is None:
-            optional_value = values[0]
-
-        assert optional_value in values
-
-        self.optional_value = optional_value
-
-        if first_value is None:
-            first_value = values[0]
-
-        assert first_value in values
-
-        self.first_value = first_value
-
-    def bump(self, value):
-        return self._values[self._values.index(value)+1]
-
-class NumericVersionPartConfiguration(VersionPartConfiguration):
-
-    optional_value = "0"
-
-    FIRST_NUMERIC = re.compile('([^\d]*)(\d+)(.*)')
-
-    def __init__(self, first_value=None):
-
-        if first_value is None:
-            first_value = "0"
-
-        int(first_value) # make sure that it's numeric
-
-        self.first_value = first_value
-
-    @classmethod
-    def bump(cls, value):
-        part_prefix, numeric_version, part_suffix = cls.FIRST_NUMERIC.search(value).groups()
-        bumped_numeric = str(int(numeric_version) + 1)
-        return "".join([part_prefix, bumped_numeric, part_suffix])
-
-class VersionPart(object):
-
-    def __init__(self, value, config=None):
-        self._value = value
-
-        if config is None:
-            config = NumericVersionPartConfiguration()
-
-        self.config = config
-
-    @property
-    def value(self):
-        return self._value or self.config.optional_value
-
-    def copy(self):
-        return VersionPart(self._value)
-
-    def bump(self):
-        return VersionPart(self.config.bump(self.value), self.config)
-
-    def is_optional(self):
-        return self.value == self.config.optional_value
-
-    def __format__(self, format_spec):
-        return self.value
-
-    def __repr__(self):
-        return '<bumpversion.VersionPart:{}:{}>'.format(
-            self.config.__class__.__name__,
-            self.value
-        )
-
-    def null(self):
-        return VersionPart(self.config.first_value, self.config)
-
 class IncompleteVersionRepresenationException(Exception):
     def __init__(self, message):
         self.message = message
@@ -576,6 +494,7 @@ OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--search',
     '--replace',
     '--tag-name',
+    '-m'
 ]
 
 
@@ -591,7 +510,7 @@ def split_args_in_optional_and_positional(args):
         if i > 0:
             previous = args[i-1]
 
-        if ((not arg.startswith('--'))  and
+        if ((not arg.startswith('-'))  and
             (previous not in OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES)):
             positions.append(i)
 
@@ -666,6 +585,10 @@ def main(original_args=None):
         defaults['current_version'] = vcs_info['current_version']
 
     config = RawConfigParser('')
+
+    # don't transform keys to lowercase (which would be the default)
+    config.optionxform = lambda option: option
+
     config.add_section('bumpversion')
 
     explicit_config = hasattr(known_args, 'config_file')
@@ -887,8 +810,8 @@ def main(original_args=None):
 
     if args.dry_run:
         logger.info("Dry run active, won't touch any files.")
-
-    if not new_version:
+    
+    if args.new_version:
         new_version = vc.parse(args.new_version)
 
     logger.info("New version will be '{}'".format(args.new_version))

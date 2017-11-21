@@ -17,7 +17,8 @@ from functools import partial
 
 import bumpversion
 
-from bumpversion import main, DESCRIPTION, WorkingDirectoryIsDirtyException
+from bumpversion import main, DESCRIPTION, WorkingDirectoryIsDirtyException, \
+    split_args_in_optional_and_positional
 
 SUBPROCESS_ENV = dict(
     list(environ.items()) + [(b'HGENCODING', b'utf-8')]
@@ -896,6 +897,8 @@ def test_log_no_config_file_info_message(tmpdir, capsys):
         info|Parsed the following values: major=1, minor=0, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=1, minor=0, patch=1|
+        info|Parsing version '1.0.1' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=1, minor=0, patch=1|
         info|New version will be '1.0.1'|
         info|Asserting files blargh.txt contain the version string:|
         info|Found '1.0.0' in blargh.txt at line 0: 1.0.0|
@@ -986,6 +989,8 @@ def test_complex_info_logging(tmpdir, capsys):
         info|Parsed the following values: major=0, minor=4, patch=0|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=4, patch=1|
+        info|Parsing version '0.4.1' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=4, patch=1|
         info|New version will be '0.4.1'|
         info|Asserting files fileE contain the version string:|
         info|Found '0.4' in fileE at line 0: 0.4|
@@ -1055,6 +1060,8 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=8, patch=1|
         info|Dry run active, won't touch any files.|
+        info|Parsing version '0.8.1' using regexp '(?P<major>\d+)\.(?P<minor>\d+)(\.(?P<patch>\d+))?'|
+        info|Parsed the following values: major=0, minor=8, patch=1|
         info|New version will be '0.8.1'|
         info|Asserting files dont_touch_me.txt contain the version string:|
         info|Found '0.8' in dont_touch_me.txt at line 0: 0.8|
@@ -1125,6 +1132,8 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         info|Parsed the following values: major=0, minor=3, patch=3|
         info|Attempting to increment part 'patch'|
         info|Values are now: major=0, minor=3, patch=4|
+        info|Parsing version '0.3.4' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=0, minor=3, patch=4|
         info|New version will be '0.3.4'|
         info|Asserting files please_touch_me.txt contain the version string:|
         info|Found '0.3.3' in please_touch_me.txt at line 0: 0.3.3|
@@ -1253,7 +1262,7 @@ def test_optional_value_from_documentation(tmpdir):
     tmpdir.join(".bumpversion.cfg").write(dedent("""
       [bumpversion]
       current_version = 1.alpha
-      parse = (?P<num>\d+)\.(?P<release>.*)
+      parse = (?P<num>\d+)(\.(?P<release>.*))?(\.)?
       serialize =
         {num}.{release}
         {num}
@@ -1462,6 +1471,8 @@ def test_search_replace_to_avoid_updating_unconcerned_lines(tmpdir, capsys):
         info|Parsed the following values: major=1, minor=5, patch=6|
         info|Attempting to increment part 'minor'|
         info|Values are now: major=1, minor=6, patch=0|
+        info|Parsing version '1.6.0' using regexp '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'|
+        info|Parsed the following values: major=1, minor=6, patch=0|
         info|New version will be '1.6.0'|
         info|Asserting files requirements.txt contain the version string:|
         info|Found 'MyProject==1.5.6' in requirements.txt at line 1: MyProject==1.5.6|
@@ -1760,3 +1771,100 @@ def test_regression_characters_after_last_label_serialize_string(tmpdir, capsys)
 
     main(['patch', 'bower.json'])
 
+def test_regression_dont_touch_capitalization_of_keys_in_config(tmpdir, capsys):
+
+    tmpdir.chdir()
+    tmpdir.join("setup.cfg").write(dedent("""
+    [bumpversion]
+    current_version = 0.1.0
+
+    [other]
+    DJANGO_SETTINGS = Value
+    """))
+
+    main(['patch'])
+
+    assert dedent("""
+    [bumpversion]
+    current_version = 0.1.1
+
+    [other]
+    DJANGO_SETTINGS = Value
+    """).strip() == tmpdir.join("setup.cfg").read().strip()
+
+def test_regression_new_version_cli_in_files(tmpdir, capsys):
+    '''
+    Reported here: https://github.com/peritus/bumpversion/issues/60
+    '''
+    tmpdir.chdir()
+    tmpdir.join("myp___init__.py").write("__version__ = '0.7.2'")
+    tmpdir.chdir()
+
+    tmpdir.join(".bumpversion.cfg").write(dedent("""
+        [bumpversion]
+        current_version = 0.7.2
+        files = myp___init__.py
+        message = v{new_version}
+        tag_name = {new_version}
+        tag = true
+        commit = true
+        """).strip())
+
+    main("patch --allow-dirty --verbose --new-version 0.9.3".split(" "))
+
+    assert "__version__ = '0.9.3'" == tmpdir.join("myp___init__.py").read()
+    assert "current_version = 0.9.3" in tmpdir.join(".bumpversion.cfg").read()
+
+
+class TestSplitArgsInOptionalAndPositional:
+    def test_all_optional(self):
+        params = ['--allow-dirty', '--verbose', '-n', '--tag-name', '"Tag"']
+        positional, optional = \
+            split_args_in_optional_and_positional(params)
+
+        assert positional == []
+        assert optional == params
+
+    def test_all_positional(self):
+        params = ['minor', 'setup.py']
+        positional, optional = \
+            split_args_in_optional_and_positional(params)
+
+        assert positional == params
+        assert optional == []
+
+    def test_no_args(self):
+        assert split_args_in_optional_and_positional([]) == \
+            ([], [])
+
+    def test_short_optionals(self):
+        params = ['-m', '"Commit"', '-n']
+        positional, optional = \
+            split_args_in_optional_and_positional(params)
+
+        assert positional == []
+        assert optional == params
+
+    def test_1optional_2positional(self):
+        params = ['-n', 'major', 'setup.py']
+        positional, optional = \
+            split_args_in_optional_and_positional(params)
+
+        assert positional == ['major', 'setup.py']
+        assert optional == ['-n']
+
+    def test_2optional_1positional(self):
+        params = ['-n', '-m', '"Commit"', 'major']
+        positional, optional = \
+            split_args_in_optional_and_positional(params)
+
+        assert positional == ['major']
+        assert optional == ['-n', '-m', '"Commit"']
+
+    def test_2optional_mixed_2positionl(self):
+        params = ['--allow-dirty', '-m', '"Commit"', 'minor', 'setup.py']
+        positional, optional = \
+            split_args_in_optional_and_positional(params)
+
+        assert positional == ['minor', 'setup.py']
+        assert optional == ['--allow-dirty', '-m', '"Commit"']
