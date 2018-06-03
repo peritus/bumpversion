@@ -1,14 +1,13 @@
 language: python
+python:
+  - "3.6"
+  - "3.5"
+  - "3.4"
+  - "3.3"
+  - "3.2"
+  - "2.7"
+  - "pypy2.7"
 
-env:
-  - TOX_ENV=py27
-  - TOX_ENV=py27-configparser
-  - TOX_ENV=py32
-  - TOX_ENV=py33
-  - TOX_ENV=py34
-  - TOX_ENV=py35
-  - TOX_ENV=py36
-  - TOX_ENV=pypy
 install:
   - git config --global user.email "bumpversion-test-git@travis.ci"
   - git config --global user.name "Testing Git on Travis CI"
@@ -16,8 +15,8 @@ install:
   - git config --list
   - echo -e '[ui]\nusername = Testing Mercurial on Travis CI <bumpversion-test-hg@travis.ci>' > ~/.hgrc
   - hg --version
-  - pip install --upgrade pytest tox
+  - pip install --upgrade pytest tox-travis
 
 script:
-  - tox -e $TOX_ENV
+  - tox
 
