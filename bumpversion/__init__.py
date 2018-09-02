@@ -615,7 +615,7 @@ def main(original_args=None):
 
         if 'files' in dict(config.items("bumpversion")):
             warnings.warn(
-                "'files =' configuration is will be deprecated, please use [bumpversion:file:...]",
+                "'files =' configuration is deprecated, please use [bumpversion:file:...]",
                 PendingDeprecationWarning
             )
 
