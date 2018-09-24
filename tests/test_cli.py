@@ -108,6 +108,7 @@ optional arguments:
                         {current_version})
   --replace REPLACE     Template for complete string to replace (default:
                         {new_version})
+  --encoding ENCODING   File encoding (default: utf-8)
   --current-version VERSION
                         Version that needs to be updated (default: None)
   --dry-run, -n         Don't write any files, just pretend. (default: False)
@@ -213,6 +214,14 @@ def test_simple_replacement_in_utf8_file(tmpdir):
     main(shlex_split("patch --current-version 1.3.0 --new-version 1.3.1 VERSION"))
     out = tmpdir.join("VERSION").read('rb')
     assert "'Kr\\xc3\\xb6t1.3.1'" in repr(out)
+
+
+def test_simple_replacement_in_utf16le_file(tmpdir):
+    tmpdir.join("VERSION").write("Kröt1.3.0".encode('utf-16le'), 'wb')
+    tmpdir.chdir()
+    main(shlex_split("patch --encoding utf-16le --current-version 1.3.0 --new-version 1.3.1 VERSION"))
+    out = tmpdir.join("VERSION").read('rb')
+    assert "'K\\x00r\\x00\\xf6\\x00t\\x001\\x00.\\x003\\x00.\\x001\\x00'" in repr(out)
 
 
 def test_config_file(tmpdir):
