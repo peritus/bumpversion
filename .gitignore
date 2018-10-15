@@ -5,3 +5,5 @@ include/
 lib/
 .Python
 bumpversion.egg-info/
+.python-version
+__pycache__/

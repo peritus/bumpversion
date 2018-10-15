@@ -243,7 +243,7 @@ class ConfiguredFile(object):
         replace_with = self._versionconfig.replace.format(**context)
 
         file_content_after = file_content_before.replace(
-            search_for, replace_with
+            search_for, replace_with, int(self._versionconfig.max_replace or -1)
         )
 
         if file_content_before == file_content_after:
@@ -340,7 +340,7 @@ class VersionConfig(object):
     Holds a complete representation of a version string
     """
 
-    def __init__(self, parse, serialize, search, replace, part_configs=None):
+    def __init__(self, parse, serialize, search, replace, part_configs=None, max_replace=None):
 
         try:
             self.parse_regex = re.compile(parse, re.VERBOSE)
@@ -356,6 +356,7 @@ class VersionConfig(object):
         self.part_configs = part_configs
         self.search = search
         self.replace = replace
+        self.max_replace = max_replace
 
     def _labels_for_format(self, serialize_format):
         return (
@@ -676,6 +677,9 @@ def main(original_args=None):
 
                 if not 'replace' in section_config:
                     section_config['replace'] = defaults.get("replace", '{new_version}')
+
+                if not 'max_replace' in section_config:
+                    section_config['max_replace'] = defaults.get("max_replace", -1)
 
                 files.append(ConfiguredFile(filename, VersionConfig(**section_config)))
 
