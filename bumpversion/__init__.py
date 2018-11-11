@@ -790,7 +790,7 @@ def main(original_args=None):
         file_names = defaults['files'].split(' ')
 
     parser3.add_argument('part',
-                         help='Part of the version to be bumped.')
+                         help='Part of the version to be bumped (major, minor, or patch).')
     parser3.add_argument('files', metavar='file',
                          nargs='*',
                          help='Files to change', default=file_names)
