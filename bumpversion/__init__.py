@@ -88,6 +88,9 @@ class BaseVCS(object):
             if e.errno == 2:
                 # mercurial is not installed then, ok.
                 return False
+            elif e.errno == 13:
+                # Permission denied
+                return False
             raise
 
 
