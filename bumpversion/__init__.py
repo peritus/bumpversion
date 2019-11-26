@@ -72,7 +72,7 @@ class BaseVCS(object):
         f.write(message.encode('utf-8'))
         f.close()
         subprocess.check_output(cls._COMMIT_COMMAND + [f.name], env=dict(
-            list(os.environ.items()) + [(b'HGENCODING', b'utf-8')]
+            list(os.environ.items()) + [(str('HGENCODING'), str('utf-8'))]
         ))
         os.unlink(f.name)
 
