@@ -1,3 +1,10 @@
+**⚠️ Current status of this project**
+
+* 🎬If you want to start **using bumpversion**, you're best advised to **install one of the maintained forks**, e.g. ➡ `@c4urself's bump2version <https://github.com/c4urself/bump2version/#installation>`_.
+* 🔨If you want to **help maintain** bumpversion, there's an `ongoing discussion about merging the fork back to the original project as well as forming a group of maintainers <https://github.com/c4urself/bump2version/issues/86>`_ to ensure a long-term future for this project. Please contribute.
+
+-----
+
 ===========
 bumpversion
 ===========
