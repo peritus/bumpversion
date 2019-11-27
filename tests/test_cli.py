@@ -89,7 +89,7 @@ EXPECTED_USAGE = ("""
 %s
 
 positional arguments:
-  part                  Part of the version to be bumped.
+  part                  Part of the version to be bumped (major, minor, or patch).
   file                  Files to change (default: [])
 
 optional arguments:
