@@ -1145,11 +1145,6 @@ def test_log_commitmessage_if_no_commit_tag_but_usable_vcs(tmpdir, vcs):
         tag = False
         
         |
-        info|Would prepare Git commit|
-        info|Would add changes in file 'please_touch_me.txt' to Git|
-        info|Would add changes in file '.bumpversion.cfg' to Git|
-        info|Would commit to Git with message 'Bump version: 0.3.3 \u2192 0.3.4'|
-        info|Would tag 'v0.3.4' in Git|
         """).strip()
 
     if vcs == "hg":
