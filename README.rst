@@ -166,6 +166,12 @@ General configuration is grouped in a ``[bumpversion]`` section.
   Also available as ``--message`` (e.g.: ``bumpversion --message
   '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}' patch``)
 
+``encoding =``
+  **default:** ``utf-8``
+
+  The encoding of the files to modify, unless overridden for a specific
+  file. This can be any encoding supported by Python's ``codecs`` module.
+
 
 Part specific configuration
 ---------------------------
@@ -310,6 +316,12 @@ File specific configuration
 
   Can be multiple lines, templated using `Python Format String Syntax
   <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
+
+``encoding =``
+  **default:** ``utf-8``
+
+  The encoding of the file. This can be any encoding supported by 
+  Python's ``codecs`` module.
 
 Options
 =======

@@ -191,8 +191,9 @@ def prefixed_environ():
 
 class ConfiguredFile(object):
 
-    def __init__(self, path, versionconfig):
+    def __init__(self, path, encoding, versionconfig):
         self.path = path
+        self.encoding = encoding
         self._versionconfig = versionconfig
 
     def should_contain_version(self, version, context):
@@ -213,12 +214,12 @@ class ConfiguredFile(object):
         assert False, msg
 
     def contains(self, search):
-        with io.open(self.path, 'rb') as f:
+        with io.open(self.path, 'rt', encoding=self.encoding) as f:
             search_lines = search.splitlines()
             lookbehind = []
 
             for lineno, line in enumerate(f.readlines()):
-                lookbehind.append(line.decode('utf-8').rstrip("\n"))
+                lookbehind.append(line.rstrip("\n"))
 
                 if len(lookbehind) > len(search_lines):
                     lookbehind = lookbehind[1:]
@@ -227,14 +228,14 @@ class ConfiguredFile(object):
                    search_lines[-1] in lookbehind[-1] and
                    search_lines[1:-1] == lookbehind[1:-1]):
                     logger.info("Found '{}' in {} at line {}: {}".format(
-                        search, self.path, lineno - (len(lookbehind) - 1), line.decode('utf-8').rstrip()))
+                        search, self.path, lineno - (len(lookbehind) - 1), line.rstrip()))
                     return True
         return False
 
     def replace(self, current_version, new_version, context, dry_run):
 
-        with io.open(self.path, 'rb') as f:
-            file_content_before = f.read().decode('utf-8')
+        with io.open(self.path, 'rt', encoding=self.encoding) as f:
+            file_content_before = f.read()
 
         context['current_version'] = self._versionconfig.serialize(current_version, context)
         context['new_version'] = self._versionconfig.serialize(new_version, context)
@@ -272,8 +273,8 @@ class ConfiguredFile(object):
             ))
 
         if not dry_run:
-            with io.open(self.path, 'wb') as f:
-                f.write(file_content_after.encode('utf-8'))
+            with io.open(self.path, 'wt', encoding=self.encoding) as f:
+                f.write(file_content_after)
 
     def __str__(self):
         return self.path
@@ -483,6 +484,7 @@ class VersionConfig(object):
 OPTIONAL_ARGUMENTS_THAT_TAKE_VALUES = [
     '--config-file',
     '--current-version',
+    '--encoding',
     '--message',
     '--new-version',
     '--parse',
@@ -677,7 +679,12 @@ def main(original_args=None):
                 if not 'replace' in section_config:
                     section_config['replace'] = defaults.get("replace", '{new_version}')
 
-                files.append(ConfiguredFile(filename, VersionConfig(**section_config)))
+                if 'encoding' in section_config:
+                    encoding = section_config.pop("encoding")
+                else:
+                    encoding = defaults.get("encoding", 'utf-8')
+
+                files.append(ConfiguredFile(filename, encoding, VersionConfig(**section_config)))
 
     else:
         message = "Could not read config file at {}".format(config_file)
@@ -704,6 +711,9 @@ def main(original_args=None):
     parser2.add_argument('--replace', metavar='REPLACE',
                          help='Template for complete string to replace',
                          default=defaults.get("replace", '{new_version}'))
+    parser2.add_argument('--encoding',
+                         help='File encoding',
+                         default=defaults.get("encoding", 'utf-8'))
 
     known_args, remaining_argv = parser2.parse_known_args(args)
 
@@ -808,7 +818,7 @@ def main(original_args=None):
     file_names = file_names or positionals[1:]
 
     for file_name in file_names:
-        files.append(ConfiguredFile(file_name, vc))
+        files.append(ConfiguredFile(file_name, defaults.get("encoding", 'utf-8'), vc))
 
     for vcs in VCS:
         if vcs.is_usable():
