@@ -120,6 +120,8 @@ optional arguments:
   --no-tag              Do not create a tag in version control
   --tag-name TAG_NAME   Tag name (only works with --tag) (default:
                         v{new_version})
+  --sign                Sign the tag (default: False)
+  --no-sign             Do not sign the tag
   --message COMMIT_MSG, -m COMMIT_MSG
                         Commit message (default: Bump version:
                         {current_version} → {new_version})
@@ -1026,6 +1028,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         current_version = 0.8
         commit = True
         tag = True
+        sign = True
         serialize =
           {major}.{minor}.{patch}
           {major}.{minor}
@@ -1047,6 +1050,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         current_version = 0.8
         commit = True
         tag = True
+        sign = True
         serialize =
           {major}.{minor}.{patch}
           {major}.{minor}
@@ -1073,6 +1077,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         current_version = 0.8.1
         commit = True
         tag = True
+        sign = True
         serialize = 
         	{major}.{minor}.{patch}
         	{major}.{minor}
@@ -1084,6 +1089,7 @@ def test_subjunctive_dry_run_logging(tmpdir, vcs):
         info|Would add changes in file '.bumpversion.cfg' to Git|
         info|Would commit to Git with message 'Bump version: 0.8 \u2192 0.8.1'|
         info|Would tag 'v0.8.1' in Git|
+        info|Would sign tag 'v0.8.1' in Git|
         """).strip()
 
     if vcs == "hg":

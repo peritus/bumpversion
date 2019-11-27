@@ -166,6 +166,15 @@ General configuration is grouped in a ``[bumpversion]`` section.
   Also available as ``--message`` (e.g.: ``bumpversion --message
   '[{now:%Y-%m-%d}] Jenkins Build {$BUILD_NUMBER}: {new_version}' patch``)
 
+``sign = (True | False)``
+  **default:** False (`Don't sign a tag`)
+
+  Whether to sign a tag when creating it. Only implemented for git as of now.
+  Don't forget to set ``user.signingkey = 0x1234abcd`` in ``.git/config`` or
+  ``~/.gitconfig``.
+
+  Also available on the command line as ``(--sign | --no-sign)``.
+
 
 Part specific configuration
 ---------------------------

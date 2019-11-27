@@ -148,8 +148,12 @@ class Git(BaseVCS):
         subprocess.check_output(["git", "add", "--update", path])
 
     @classmethod
-    def tag(cls, name):
-        subprocess.check_output(["git", "tag", name])
+    def tag(cls, name, message='', sign=False):
+        command = ["git", "tag"]
+        if sign:
+            command.extend(["--sign", '--message', message or name])
+        command.append(name)
+        subprocess.check_output(command)
 
 
 class Mercurial(BaseVCS):
@@ -180,7 +184,7 @@ class Mercurial(BaseVCS):
         pass
 
     @classmethod
-    def tag(cls, name):
+    def tag(cls, name, message='', sign=False):
         subprocess.check_output(["hg", "tag", name])
 
 VCS = [Git, Mercurial]
@@ -628,7 +632,7 @@ def main(original_args=None):
             except NoOptionError:
                 pass  # no default value then ;)
 
-        for boolvaluename in ("commit", "tag", "dry_run"):
+        for boolvaluename in ("commit", "tag", "dry_run", "sign"):
             try:
                 defaults[boolvaluename] = config.getboolean(
                     "bumpversion", boolvaluename)
@@ -779,6 +783,13 @@ def main(original_args=None):
                          help='Tag name (only works with --tag)',
                          default=defaults.get('tag_name', 'v{new_version}'))
 
+    signgroup = parser3.add_mutually_exclusive_group()
+
+    signgroup.add_argument('--sign', action='store_true', dest="sign", default=defaults.get("sign", False),
+                           help='Sign the tag')
+    signgroup.add_argument('--no-sign', action='store_false', dest="sign",
+                           help='Do not sign the tag', default=argparse.SUPPRESS)
+
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
                          help='Commit message',
                          default=defaults.get('message', 'Bump version: {current_version} → {new_version}'))
@@ -878,6 +889,7 @@ def main(original_args=None):
 
     do_commit = (not args.dry_run) and args.commit
     do_tag = (not args.dry_run) and args.tag
+    do_sign = do_tag and args.sign
 
     logger.info("{} {} commit".format(
         "Would prepare" if not do_commit else "Preparing",
@@ -919,6 +931,12 @@ def main(original_args=None):
         vcs.__name__
     ))
 
-    if do_tag:
-        vcs.tag(tag_name)
+    if args.sign:
+        logger.info("{} '{}' in {}".format(
+            "Would sign tag" if not do_sign else "Signing",
+            tag_name,
+            vcs.__name__
+        ))
 
+    if do_tag:
+        vcs.tag(tag_name, message=commit_message, sign=do_sign)
