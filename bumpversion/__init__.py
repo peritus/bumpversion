@@ -24,6 +24,7 @@ from string import Formatter
 from datetime import datetime
 from difflib import unified_diff
 from tempfile import NamedTemporaryFile
+from contextlib import contextmanager
 
 import sys
 import codecs
@@ -43,6 +44,18 @@ DESCRIPTION = 'bumpversion: v{} (using Python v{})'.format(
 import logging
 logger = logging.getLogger("bumpversion.logger")
 logger_list = logging.getLogger("bumpversion.list")
+
+
+@contextmanager
+def message_file(message):
+    try:
+        f = NamedTemporaryFile('wb', delete=False)
+        f.write(message.encode('utf-8'))
+        f.close()
+        yield f.name
+    finally:
+        os.unlink(f.name)
+
 
 from argparse import _AppendAction
 class DiscardDefaultIfSpecifiedAppendAction(_AppendAction):
@@ -89,6 +102,51 @@ class BaseVCS(object):
                 # mercurial is not installed then, ok.
                 return False
             raise
+
+
+class Svn(BaseVCS):
+
+    _TEST_USABLE_COMMAND = ["svn", "info"]
+    _COMMIT_COMMAND = ["svn", "commit", "--file"]
+
+    @classmethod
+    def assert_nondirty(cls):
+        lines = [
+            line.strip() for line in
+            subprocess.check_output(
+                ["svn", "status"]).splitlines()
+            if line.strip()
+        ]
+
+        if lines:
+            raise WorkingDirectoryIsDirtyException(
+                "Subversion working directory is not clean:\n{}".format(
+                    b"\n".join(lines)))
+
+    @classmethod
+    def latest_tag_info(cls):
+        return {}
+
+    @classmethod
+    def add_path(cls, path):
+        pass
+
+    @classmethod
+    def tag(cls, name, message=""):
+        svn_info = subprocess.check_output(["svn", "info"])
+        rurl = re.search(r'^relative url: (.*)$', svn_info,
+                         re.M|re.I).groups()[0]
+        rurl = rurl.split('/trunk')[0]
+        rurl = rurl.split('/branches')[0]
+
+        with message_file(message) as filename:
+            subprocess.check_output([
+                "svn",
+                "copy",
+                ".",
+                rurl + "/tags/" + name,
+                "--file=" + filename
+            ])
 
 
 class Git(BaseVCS):
@@ -148,7 +206,7 @@ class Git(BaseVCS):
         subprocess.check_output(["git", "add", "--update", path])
 
     @classmethod
-    def tag(cls, name):
+    def tag(cls, name, message=""):
         subprocess.check_output(["git", "tag", name])
 
 
@@ -180,10 +238,10 @@ class Mercurial(BaseVCS):
         pass
 
     @classmethod
-    def tag(cls, name):
+    def tag(cls, name, message=""):
         subprocess.check_output(["hg", "tag", name])
 
-VCS = [Git, Mercurial]
+VCS = [Git, Mercurial, Svn]
 
 
 def prefixed_environ():
@@ -920,5 +978,5 @@ def main(original_args=None):
     ))
 
     if do_tag:
-        vcs.tag(tag_name)
+        vcs.tag(tag_name, message=commit_message)
 
