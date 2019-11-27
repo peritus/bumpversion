@@ -20,7 +20,7 @@ commits and tags:
   commits and tags to Git and Mercurial if available
 - just handles text files, so it's not specific to any programming language
 
-.. image:: https://travis-ci.org/peritus/bumpversion.png?branch=master
+.. image:: https://travis-ci.org/peritus/bumpversion.svg?branch=master
   :target: https://travis-ci.org/peritus/bumpversion
 
 .. image:: https://ci.appveyor.com/api/projects/status/bxq8185bpq9u3sjd/branch/master?svg=true
