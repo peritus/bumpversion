@@ -236,14 +236,33 @@ class ConfiguredFile(object):
         with io.open(self.path, 'rb') as f:
             file_content_before = f.read().decode('utf-8')
 
+        def line_ending(txt):
+            lines = txt.splitlines(True)
+            if not lines:
+                return os.linesep  # use system default
+            first = lines[0]
+            if first.endswith('\r\n'):
+                return '\r\n'
+            if first.endswith('\n'):
+                return '\n'
+            if first.endswith('\r'):
+                return '\r'
+            return os.linesep
+
+        eol = line_ending(file_content_before)
+
         context['current_version'] = self._versionconfig.serialize(current_version, context)
         context['new_version'] = self._versionconfig.serialize(new_version, context)
 
         search_for = self._versionconfig.search.format(**context)
         replace_with = self._versionconfig.replace.format(**context)
 
+        search_for_eol = line_ending(search_for)
+        replace_with_eol = line_ending(replace_with)
+
         file_content_after = file_content_before.replace(
-            search_for, replace_with
+            search_for.replace(search_for_eol, eol),
+            replace_with.replace(replace_with_eol, eol)
         )
 
         if file_content_before == file_content_after:
@@ -637,7 +656,7 @@ def main(original_args=None):
 
         for section_name in config.sections():
 
-            section_name_match = re.compile("^bumpversion:(file|part):(.+)").match(section_name)
+            section_name_match = re.compile(r"^bumpversion:(file|part):(.+)").match(section_name)
 
             if not section_name_match:
                 continue
@@ -666,7 +685,7 @@ def main(original_args=None):
                 section_config['part_configs'] = part_configs
 
                 if not 'parse' in section_config:
-                    section_config['parse'] = defaults.get("parse", '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)')
+                    section_config['parse'] = defaults.get("parse", r'(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)')
 
                 if not 'serialize' in section_config:
                     section_config['serialize'] = defaults.get('serialize', [str('{major}.{minor}.{patch}')])
