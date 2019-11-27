@@ -32,6 +32,8 @@ from bumpversion.version_part import VersionPart, NumericVersionPartConfiguratio
 
 if sys.version_info[0] == 2:
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+elif sys.version_info[0] == 3 and sys.version_info[1] <= 6:
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
 
 __VERSION__ = '0.5.4-dev'
 
