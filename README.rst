@@ -311,6 +311,11 @@ File specific configuration
   Can be multiple lines, templated using `Python Format String Syntax
   <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
 
+``max_replace =``
+  **default:** ``-1``
+
+  How many replacements will be allowed in the given file.
+
 Options
 =======
 
