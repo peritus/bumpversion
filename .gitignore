@@ -1,3 +1,4 @@
+*.py[co]
 .tox
 _test_run/
 bin/
@@ -5,3 +6,5 @@ include/
 lib/
 .Python
 bumpversion.egg-info/
+.pytest_cache/
+__pycache__/
