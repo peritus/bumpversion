@@ -284,7 +284,7 @@ File specific configuration
   Template string how to search for the string to be replaced in the file.
   Useful if the remotest possibility exists that the current version number
   might be multiple times in the file and you mean to only bump one of the
-  occurences. Can be multiple lines, templated using `Python Format String Syntax
+  occurrences. Can be multiple lines, templated using `Python Format String Syntax
   <http://docs.python.org/2/library/string.html#format-string-syntax>`_.
 
 ``replace =``
