@@ -390,8 +390,10 @@ bumpversion is licensed under the MIT License - see the LICENSE.rst file for det
 Changes
 =======
 
-**unreleased**
-**v0.5.4-dev**
+**0.6.0**
+
+- Deprecation: publish package that links to the newer bump2version for seamless
+  upgrades (see: https://www.python.org/dev/peps/pep-0423/#id106)
 
 **v0.5.3**
 

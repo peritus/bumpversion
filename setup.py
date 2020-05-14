@@ -11,21 +11,18 @@ long_description = re.sub(
 
 setup(
     name='bumpversion',
-    version='0.5.4-dev',
+    version='0.6.0',
     url='https://github.com/peritus/bumpversion',
     author='Filip Noetzel',
     author_email='filip+bumpversion@j03.de',
     license='MIT',
-    packages=['bumpversion'],
+    install_requires=[
+        'bump2version',
+    ],
     description=description,
     long_description=long_description,
-    entry_points={
-        'console_scripts': [
-            'bumpversion = bumpversion:main',
-        ]
-    },
     classifiers=(
-        'Development Status :: 4 - Beta',
+        'Development Status :: 7 - Inactive',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
