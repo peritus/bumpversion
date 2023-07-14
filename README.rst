@@ -1,7 +1,7 @@
 .. DANGER::
    ⚠️ ``bumpversion`` is **no longer maintained**.
 
-   You should **switch to `bump-my-version <https://github.com/callowayproject/bump-my-version>`_ **.
+   You should **switch to** `bump-my-version <https://github.com/callowayproject/bump-my-version>`_.
 
 ===========
 bumpversion
